@@ -1,0 +1,18 @@
+# update with required information and save it as
+#   setup.config file
+
+[redis]
+host=
+port=
+password=
+db=
+decode_responses=
+
+[service]
+PORT=8000
+JWT_SECRET_KEY=
+SRVC_SHARED_SECRET=
+IDENTITY=
+APP_SECRET_KEY=
+CSRF_PROTECTION_KEY=
+ENCRYPTION_KEY=text_encryption.key
