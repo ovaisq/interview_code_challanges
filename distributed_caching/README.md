@@ -12,6 +12,10 @@ A relatively efficient implementation of distributed caching using Redis with a 
   value = encrypt_text(value).decode('utf-8')
   ```
 
+##### Generate SSL key/cert
+* Gen SSL key/cert for secure connection to the service
+    > openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 3650
+
 #### Examples
 
 **GET Bearer Token**
