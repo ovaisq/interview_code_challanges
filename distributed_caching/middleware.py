@@ -11,8 +11,8 @@ from config import get_config
 requests.packages.urllib3.disable_warnings()
 
 # Define the URL of the caching service endpoint
-CACHE_URL = 'https://localhost:5000/cache'
-LOGIN_URL = 'https://localhost:5000/login'
+CACHE_URL = 'https://localhost:8000/cache'
+LOGIN_URL = 'https://localhost:8000/login'
 
 CONFIG = get_config()
 
