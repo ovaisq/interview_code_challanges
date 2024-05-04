@@ -1,0 +1,4 @@
+cryptography==41.0.7
+Flask==3.0.3
+Flask_JWT_Extended==4.6.0
+redis==4.6.0
