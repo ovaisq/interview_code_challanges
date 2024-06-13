@@ -23,6 +23,8 @@ What you see in this branch is what I submitted. [Here are the diffs between my 
 
 The commits involved a range of tasks to improve code quality and readability. The first commit fixed a typo in the version variable, while subsequent commits focused on formatting and documentation. Variables were renamed to snake_case, and docstrings were added or clarified throughout the codebase. Exception handling was also improved, with empty list checks added to prevent errors. Testing was enhanced through the addition of test cases and output files, including details on test case results. Additionally, logging was implemented to provide a clearer understanding of code execution. Finally, commit updates included improvements to documentation, testing, and markdown formatting for run and diff outputs.
 
+### Original README below
+
 # Kitty Image Viewer
 
 This utility code takes images of kitties and arranges them in nice rows.
