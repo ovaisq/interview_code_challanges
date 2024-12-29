@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ©2024, Ovais Quraishi
-"""A relatively effecient implementation of distributed caching using Redis with a Flask endpoint
+"""A relatively efficient implementation of distributed caching using Redis with a Flask endpoint
 	Implements consistent hashing: ensures even distribution of keys across nodes
 	Implements a client Interface/communication protocol: interact with this service via endpoint,
 		defines a READ/WRITE/DELETE communication protocol
@@ -142,5 +142,5 @@ if __name__ == '__main__':
     # in production we use gunicorn
     app.run(port=CONFIG.get('service','PORT'),
 			host='0.0.0.0',
-			ssl_context=('cert.pem', 'key.pem'),
-			debug=True) # not for production
+			#ssl_context=('1cert.pem', '1key.pem'),
+			debug=False) # not for production
