@@ -15,7 +15,7 @@ Using PostgreSQL with JSONB for data storage and PostgreSQL's full-text search c
 * Monitoring : Prometheus and Grafana
 * Logging : ELK Stack (Elasticsearch, Logstash, Kibana)
 
-**Diagram**
+**Search Service Diagram**
 ```mermaid
 
 graph TD
@@ -166,7 +166,7 @@ if __name__ == '__main__':
   - **user_roles** : Defines roles like 'admin' and 'user'.
   - **user_roles_mapping** : Maps users to their roles for authorization.
 
-
+**Overall Design Diagram**
 ```mermaid
 graph TD
   subgraph "`**User Management APIs**`"
