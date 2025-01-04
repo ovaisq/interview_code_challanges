@@ -11,7 +11,7 @@ COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy the application code
-COPY . .
+COPY . /app/
 
 # Expose the port used by the application
 EXPOSE 9090
