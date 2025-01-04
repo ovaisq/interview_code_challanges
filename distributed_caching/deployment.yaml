@@ -15,7 +15,7 @@ spec:
     metadata:
       labels:
         app: caching-service
-        verion: SEMVER
+        version: SEMVER
     spec:
       serviceAccountName: caching-service-sa
       containers:
