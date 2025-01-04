@@ -11,11 +11,11 @@ COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy the application code
-COPY *.pem /app/
-COPY . /app/
+COPY *.pem .
+COPY . .
 
 # Expose the port used by the application
 EXPOSE 9090
 
 # Run the command to start the application
-CMD ["/app/service_run.sh"]
+CMD ["./service_run.sh"]
