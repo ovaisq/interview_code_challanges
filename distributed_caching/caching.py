@@ -9,7 +9,6 @@
 	Assumes: for this exercise a redis server with 1 master and 3 replicas
 """
 
-import json
 import redis
 from hashlib import blake2b
 from flask import Flask, request, jsonify
@@ -18,6 +17,7 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 # import required local modules
 from config import get_config
 from encryption import encrypt_text, decrypt_text
+from utils import get_version
 
 # constants
 app = Flask("Caching-Service")
@@ -101,6 +101,22 @@ class DistributedCache:
 
 # Instantiate the cache with nodes
 cache = DistributedCache(nodes=['node1', 'node2', 'node3'])  # redis node names here
+
+@app.route('/version', methods=['GET'])
+def get_version():
+    """Get service version semver
+    """
+
+    response = get_version()
+
+    if isinstance(response, dict) and 'error' in response:
+        return jsonify(response), 400
+    elif response is False:  # New elif block to handle False responses
+        # Return a custom error message or status code
+        custom_error = {'message': 'Version information is not available'}
+        return jsonify(custom_error), 500
+    elif isinstance(response, dict):
+        return jsonify(response)
 
 @app.route('/login', methods=['POST'])
 def login():
