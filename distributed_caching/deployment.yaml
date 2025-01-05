@@ -17,18 +17,16 @@ spec:
         app: caching-service
         version: SEMVER
     spec:
-      serviceAccountName: caching-service-sa
       containers:
       - name: caching-service
         image: docker:5000/caching-service:SEMVER
-        resources:
-          requests: 3Gi
-          limits:
-            memory: 4Gi
-          ephemeral-storage: 2Gi
         imagePullPolicy: Always
         ports:
         - containerPort: 9090
-        volumeMounts:
-          - name: ephemeral
-            mountPath: "/tmp"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "4Gi"
+            cpu: "500m"
