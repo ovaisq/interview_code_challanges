@@ -95,10 +95,12 @@ class DistributedCache:
         request = {"command": "READ", "key": key}
         return self.send_request(node, request)
 
-    def write(self, key, value):
+    def write(self, key, value, expire=None):
         """Send a WRITE request to the appropriate cache node"""
         node = self.get_node(key)
         request = {'command': 'WRITE', 'key': key, 'value': value}
+        if expire is not None:
+            request['expire'] = expire
         return self.send_request(node, request)
 
     def delete(self, key):
