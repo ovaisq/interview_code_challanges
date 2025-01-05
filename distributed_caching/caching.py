@@ -64,8 +64,11 @@ class DistributedCache:
 
     def send_request(self, node, request):
         """Send a request to the specified cache node and receive the response"""
+        
         if request["command"] == "WRITE":
-            self.redis_clients[node].set(request["key"], request["value"], ex=R_KEY_EXPIRE_SEC)
+            # expire value if present, otherwise default to R_KEY_EXPIRE_SEC
+            expire_time = request.get("expire", R_KEY_EXPIRE_SEC)
+            self.redis_clients[node].set(request["key"], request["value"], ex=expire_time)
             return {"command": request["command"], "status": "SUCCESS", "value": request["value"]}
         elif request["command"] == "READ":
             value = self.redis_clients[node].get(request["key"])
@@ -81,6 +84,7 @@ class DistributedCache:
                 return {"status": "NOT_FOUND", "message": request["key"] + " Key not found"}
         else:
             return {"status": "ERROR", "message": request["command"] + " Invalid command"}
+
 
     def read(self, key):
         """Send a READ request to the appropriate cache node"""
