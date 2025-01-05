@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: caching-service-deployment
+  name: caching-deployment
   labels:
-    app: caching-service
+    app: caching
     environment: production
     version: SEMVER
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: caching-service
+      app: caching
   template:
     metadata:
       labels:
-        app: caching-service
+        app: caching
         version: SEMVER
     spec:
       containers:
       - name: caching-service
-        image: docker:5000/caching-service:SEMVER
+        image: docker:5000/caching:SEMVER
         imagePullPolicy: Always
         ports:
         - containerPort: 9090
