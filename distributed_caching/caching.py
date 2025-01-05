@@ -16,7 +16,6 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 
 # import required local modules
 from config import get_config
-from encryption import encrypt_text, decrypt_text
 from utils import get_version
 
 # constants
@@ -103,7 +102,7 @@ class DistributedCache:
 cache = DistributedCache(nodes=['node1', 'node2', 'node3'])  # redis node names here
 
 @app.route('/version', methods=['GET'])
-def get_version():
+def version():
     """Get service version semver
     """
 
