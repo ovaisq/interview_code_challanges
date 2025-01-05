@@ -67,6 +67,7 @@ class DistributedCache:
         
         if request["command"] == "WRITE":
             # expire value if present, otherwise default to R_KEY_EXPIRE_SEC
+            print(request)
             if "expire" in request:
                 expire_time = request["expire"]
             else:
