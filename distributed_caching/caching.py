@@ -67,7 +67,6 @@ class DistributedCache:
         
         if request["command"] == "WRITE":
             # expire value if present, otherwise default to R_KEY_EXPIRE_SEC
-            print(request)
             if "expire" in request:
                 expire_time = request["expire"]
             else:
@@ -102,6 +101,7 @@ class DistributedCache:
         request = {'command': 'WRITE', 'key': key, 'value': value}
         if expire is not None:
             request['expire'] = expire
+        print(request)
         return self.send_request(node, request)
 
     def delete(self, key):
