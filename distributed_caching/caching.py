@@ -101,7 +101,6 @@ class DistributedCache:
         request = {'command': 'WRITE', 'key': key, 'value': value}
         if expire is not None:
             request['expire'] = expire
-        print(request)
         return self.send_request(node, request)
 
     def delete(self, key):
@@ -151,11 +150,12 @@ def cache_request():
     command = data.get('command')
     key = data.get('key')
     value = data.get('value')
+    expire = data.get('expire')
 
     if command == 'READ':
         return cache.read(key)
     elif command == 'WRITE':
-        return cache.write(key, value)
+        return cache.write(key, value, expire)
     elif command == 'DELETE':
         return cache.delete(key)
     else:
