@@ -31,6 +31,8 @@ REDIS_CONFIG = {
     "decode_responses": CONFIG.get('redis','decode_responses')
 }
 
+R_KEY_EXPIRE_SEC=CONFIG.get('redis', 'key_expire_secs')
+
 app.config.update(
                   JWT_SECRET_KEY=CONFIG.get('service', 'JWT_SECRET_KEY'),
                   SECRET_KEY=CONFIG.get('service', 'APP_SECRET_KEY'),
@@ -63,7 +65,7 @@ class DistributedCache:
     def send_request(self, node, request):
         """Send a request to the specified cache node and receive the response"""
         if request["command"] == "WRITE":
-            self.redis_clients[node].set(request["key"], request["value"], ex=10)
+            self.redis_clients[node].set(request["key"], request["value"], ex=R_KEY_EXPIRE_SEC)
             return {"command": request["command"], "status": "SUCCESS", "value": request["value"]}
         elif request["command"] == "READ":
             value = self.redis_clients[node].get(request["key"])

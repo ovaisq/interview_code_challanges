@@ -7,6 +7,7 @@ port=
 password=
 db=
 decode_responses=
+key_expire_secs=
 
 [service]
 PORT=8000
