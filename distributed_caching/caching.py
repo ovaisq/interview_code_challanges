@@ -67,7 +67,10 @@ class DistributedCache:
         
         if request["command"] == "WRITE":
             # expire value if present, otherwise default to R_KEY_EXPIRE_SEC
-            expire_time = request.get("expire", R_KEY_EXPIRE_SEC)
+            if "expire" in request:
+                expire_time = request["expire"]
+            else:
+                expire_time = request.get("expire", R_KEY_EXPIRE_SEC)
             self.redis_clients[node].set(request["key"], request["value"], ex=expire_time)
             return {"command": request["command"], "status": "SUCCESS", "value": request["value"]}
         elif request["command"] == "READ":
