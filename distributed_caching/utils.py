@@ -16,7 +16,7 @@ def get_version():
             str: The version string if valid, otherwise False.
     """
 
-    ver_file_path = 'ver.txt'
+    ver_file_path = '/app/ver.txt'
 
     try:
         with open(str(Path(ver_file_path).resolve()), 'r') as f:
