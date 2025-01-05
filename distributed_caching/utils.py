@@ -3,6 +3,11 @@
 """Utility functions
 """
 
+import logging
+import re
+
+from pathlib import Path
+
 def get_version():
     """Reads the first line from ver.txt, checks if it matches 
         semver (0.1.2) format and returns it.
