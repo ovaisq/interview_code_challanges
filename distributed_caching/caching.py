@@ -69,6 +69,8 @@ class DistributedCache:
             # expire value if present, otherwise default to R_KEY_EXPIRE_SEC
             if "expire" in request:
                 expire_time = request["expire"]
+                if expire_time <= 0:
+                    expire_time = None
             else:
                 expire_time = request.get("expire", R_KEY_EXPIRE_SEC)
             self.redis_clients[node].set(request["key"], request["value"], ex=expire_time)
