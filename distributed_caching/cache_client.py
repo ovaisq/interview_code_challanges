@@ -97,7 +97,7 @@ def configure_redis_client() -> redis.StrictRedis:
     return redis.StrictRedis(host=host, port=port, password=password)
 
 def add_key(key):
-    """Add a key to a set in redis"""
+    """Add a key to a set in Redis"""
 
     caching_srvc_crud_url = os.environ['caching_srvc_crud_url']
     
@@ -113,6 +113,27 @@ def add_key(key):
             logging.info(info_message)
             return True
 
+def del_key(key):
+    """Invalidate cache by deleting the key in Redis"""
+    
+    caching_srvc_crud_url = os.environ['caching_srvc_crud_url']
+    
+    if lookup_key(key):
+        data_payload = {"command": "DELETE", "key": key}
+        json_resp = cache_api(caching_srvc_crud_url, payload=data_payload)
+        if json_resp['status'] == 'SUCCESS':
+            info_message = f'{key} added'
+            logging.info(info_message)
+            return True
+        else:
+            info_message = f'{key} deletion appears to have failed. Retry again later'
+            logging.error(info_message)
+            return False
+    else:
+        info_message = f'{key} does not exist. Nothing to delete'
+        logging.info(info_message)
+        return False
+    
 def lookup_key(key):
     """Look up if a key exists"""
     

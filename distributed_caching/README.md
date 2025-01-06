@@ -12,6 +12,48 @@ A relatively efficient implementation of distributed caching using Redis with a 
   value = encrypt_text(value).decode('utf-8')
   ```
 
+#### Overview
+
+**Client/Server Sequence Diagram**
+```mermaid
+sequenceDiagram
+    participant client as Cache Client
+    participant srv as Caching Service
+
+    Note over client, srv: Authentication Phase: (client_id, api_key provided)
+
+    client->>srv: caching_srvc_login_url, caching_srvc_secret (caching_srvc_payload)
+    srv-->>client: JWT Token: (curr_token)
+
+    client->>srv: endpoint_url: (caching_srvc_headers, payload)
+    Note over client, srv: Data Access Phase
+
+    srv->>client: Response: (data, status_code)
+```
+
+**Server API Sequence Diagram**
+```mermaid
+sequenceDiagram
+    participant cache_node as Cache Node
+    participant srv as Caching Service
+
+    Note over cache_node, srv: Key-Value Store (Redis)
+
+    srv->>cache_node: request: ({"command": "WRITE", "key": "some_key", "value": "some_value", "expire": 3600})
+    cache_node-->>srv: response: ({"command": "WRITE", "status": "SUCCESS", "value": "some_value"})
+
+    srv->>cache_node: request: ({"command": "READ", "key": "some_key"})
+    cache_node-->>srv: response: ({"command": "READ", "status": "SUCCESS", "value": "some_value"})
+
+    srv->>cache_node: request: ({"command": "DELETE", "key": "some_key"})
+    cache_node-->>srv: response: ({"command": "DELETE", "status": "SUCCESS"})
+
+```
+
+
+##### Example Kubernetes Deployment
+![K8](caching_service_kubernetes.png)
+
 ##### Generate SSL key/cert
 * Gen SSL key/cert for secure connection to the service
     > openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 3650
