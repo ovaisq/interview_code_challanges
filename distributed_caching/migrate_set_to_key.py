@@ -4,20 +4,19 @@
 """Copy contents of a given Redis Set to a Key"""
 
 import asyncio
-import os
 import redis
 
 # Import required local modules
 from config import get_config
 
-get_config()
+CONFIG = get_config()
 
 def redis_client() -> redis.StrictRedis:
     """Configure and return a Redis client instance."""
 
-    host = os.environ["redis_host"]
-    port = os.environ["redis_port"]
-    password = os.environ["redis_password"]
+    host = CONFIG.get('redis','host')
+    port = CONFIG.get('redis','port')
+    password = CONFIG.get('redis','password')
 
     return redis.StrictRedis(host=host, port=port, password=password)
 
