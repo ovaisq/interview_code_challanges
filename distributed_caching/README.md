@@ -5,6 +5,10 @@ A relatively efficient implementation of distributed caching using Redis with a 
 * Implements consistent hashing: ensures even distribution of keys across nodes.
 * Implements a client interface/communication protocol: interact with this service via endpoint,
   defines a READ/WRITE/DELETE communication protocol.
+* In addition to invalidation/deletion support, for scenarios where one does not want to invalidate cache, but
+  keep data around for some time, the service utilizes key expire time functionality of Redis
+  * It's a configurable option available through _**setup.config**_, the key expire time defaults to _**600**_ seconds. However,
+  this can be overriden when calling the **WRITE** api.
 * Replication: relies on Redis Server Replication (there are few other options available as well).
 * Assumes: for this exercise, a Redis server with 1 master and 3 replicas.
 * **Encrypt value**: see the _encryption.py_ module should you need to store encrypted values. See code example
