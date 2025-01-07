@@ -69,7 +69,7 @@ requires "jq" Command-line JSON processor
 ```shell
 > export api_key="your_api_key_here"
 > export AT=$(curl -sk -X POST \
-  https://localhost:8000/login \
+  https://localhost:9090/login \
   -H 'Content-Type: application/json' \
   -d '{
     "api_key": "'${api_key}'"
@@ -80,7 +80,7 @@ requires "jq" Command-line JSON processor
 **WRITE**
 ```shell
 > curl -k -X POST \
-  https://localhost:8000/cache \
+  https://localhost:9090/cache \
   -H "Authorization: Bearer ${AT}" \
   -H 'Content-Type: application/json' \
   -d '{
@@ -100,7 +100,7 @@ requires "jq" Command-line JSON processor
 **READ**
 ```shell
 curl -k -X POST \
-  https://localhost:8000/cache \
+  https://localhost:9090/cache \
   -H "Authorization: Bearer ${AT}" \
   -H 'Content-Type: application/json' \
   -d '{
@@ -118,7 +118,7 @@ curl -k -X POST \
 **DELETE**
 ```shell
 curl -k -X POST \
-  https://localhost:8000/cache \
+  https://localhost:9090/cache \
   -H "Authorization: Bearer ${AT}" \
   -H 'Content-Type: application/json' \
   -d '{
