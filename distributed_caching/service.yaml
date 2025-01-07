@@ -6,6 +6,7 @@ spec:
   type: LoadBalancer
   selector:
     app: caching
+  sessionAffinity: ClientIP
   ports:
     - port: 9090
       targetPort: 9090
