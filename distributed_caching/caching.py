@@ -93,12 +93,14 @@ class DistributedCache:
 
     def read(self, key):
         """Send a READ request to the appropriate cache node"""
+        
         node = self.get_node(key)
         request = {"command": "READ", "key": key}
         return self.send_request(node, request)
 
     def write(self, key, value, expire=None):
         """Send a WRITE request to the appropriate cache node"""
+        
         node = self.get_node(key)
         request = {'command': 'WRITE', 'key': key, 'value': value}
         if expire is not None:
@@ -107,6 +109,7 @@ class DistributedCache:
 
     def delete(self, key):
         """Send a DELETE request to the appropriate cache node"""
+        
         node = self.get_node(key)
         request = {"command": "DELETE", "key": key}
         return self.send_request(node, request)
@@ -148,6 +151,7 @@ def login():
 @jwt_required()
 def cache_request():
     """Endpoint to handle caching requests"""
+    
     data = request.get_json()
     command = data.get('command')
     key = data.get('key')
