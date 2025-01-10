@@ -27,7 +27,7 @@ password = CONFIG.get('psqldb','password')
 port = CONFIG.get('psqldb','port')
 
 PGVECTOR_CONNECTION = f"postgresql+psycopg://{user}:{password}@{host}:5432/{database}"
-os.environ['OLLAMA_HOST'] = "http://192.168.3.16"
+os.environ['OLLAMA_HOST'] = "" #without setting this, the app will error out
 
 def process_input(urls, question):
     model_local = ChatOllama(model="qwq",temprature=0) 
