@@ -29,14 +29,14 @@ port = CONFIG.get('psqldb','port')
 PGVECTOR_CONNECTION = f"postgresql+psycopg://{user}:{password}@{host}:5432/{database}"
 os.environ['OLLAMA_HOST'] = "" #without setting this, the app will error out
 
-def process_input(urls, question):
-    model_local = ChatOllama(model="qwq",temprature=0) 
-    
+def process_input(urls, query):
+    model_local = ChatOllama(model="llama3.2", temperature=0)
+
     # Convert string of URLs to list
     urls_list = urls.split("\n")
     docs = [WebBaseLoader(url).load() for url in urls_list]
     docs_list = [item for sublist in docs for item in sublist]
-    
+
     text_splitter = CharacterTextSplitter.from_tiktoken_encoder(chunk_size=7500, chunk_overlap=100)
     doc_splits = text_splitter.split_documents(docs_list)
 
@@ -52,18 +52,20 @@ def process_input(urls, question):
     )
     retriever = vectorstore.as_retriever()
 
-    after_rag_template = """Answer the question based only on the following context:
-    {context}
-    Question: {question}
+    # Template for handling both questions and instructions
+    after_rag_template = """
+    Based on the following context, respond appropriately to the input query.
+    Context: {context}
+    Input: {query}
     """
     after_rag_prompt = ChatPromptTemplate.from_template(after_rag_template)
     after_rag_chain = (
-        {"context": retriever, "question": RunnablePassthrough()}
+        {"context": retriever, "query": RunnablePassthrough()}
         | after_rag_prompt
         | model_local
         | StrOutputParser()
     )
-    return after_rag_chain.invoke(question)
+    return after_rag_chain.invoke(query)
 
 # Define Gradio Blocks
 with gr.Blocks(css="""
@@ -76,16 +78,17 @@ with gr.Blocks(css="""
     }
 """, theme=gr.themes.Ocean()) as ui:
     gr.Markdown("# Chat Ollama")
-    gr.Markdown("Enter URLs and a question to query the documents.")
+    gr.Markdown("Enter URLs and a query (question or instruction) to interact with the documents.")
 
     with gr.Row():
         urls = gr.Textbox(label="Enter URLs separated by new lines", lines=5)
-        question = gr.Textbox(label="Question")
+        query = gr.Textbox(label="Query (Question or Instruction)")
 
-    #results = gr.Textbox(label="Results", elem_id="markdown-output", interactive=False)
     results = gr.Markdown(elem_id="results-box")
 
     submit_button = gr.Button("Submit")
-    submit_button.click(fn=process_input, inputs=[urls, question], outputs=[results])
+    submit_button.click(fn=process_input, inputs=[urls, query], outputs=[results])
 
-ui.launch(server_name="0.0.0.0",pwa=True)
+# bind to any ip, and make it mobile friendly
+ui.launch(server_name="0.0.0.0", pwa=True)
+
