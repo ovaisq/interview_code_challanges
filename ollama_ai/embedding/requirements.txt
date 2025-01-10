@@ -1,0 +1,11 @@
+gradio==5.10.0
+pq
+psycopg[binary,pool]
+langchain
+langchain_community
+langchain_core
+langchain_ollama
+langchain_postgres
+pgvector
+bs4
+tiktoken
