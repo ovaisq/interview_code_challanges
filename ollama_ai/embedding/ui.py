@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 
-import os
-import psycopg2
-from psycopg2.extensions import make_dsn
 from config import get_config
-
-import gradio as gr
+from langchain.output_parsers import PydanticOutputParser
+from langchain.schema import Document
+from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader
-from langchain_postgres import PGVector
 from langchain_community.vectorstores import Chroma
-from langchain_ollama import OllamaEmbeddings as embeddings
-from langchain_ollama import ChatOllama
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.output_parsers import PydanticOutputParser
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.schema import Document
+from langchain_core.runnables import RunnablePassthrough
+from langchain_ollama import ChatOllama
+from langchain_ollama import OllamaEmbeddings as embeddings
+from langchain_postgres import PGVector
+from psycopg2.extensions import make_dsn
+import gradio as gr
+import os
+import psycopg2
+
 
 # Database connection details
 
