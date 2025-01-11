@@ -128,24 +128,6 @@ def process_input(urls: str, q_n_a: str) -> any:
 
     return after_rag_chain.invoke(q_n_a)
 
-
-    retriever = vectorstore.as_retriever()
-
-    # Template for handling both questions and instructions
-    after_rag_template = """
-    Based on the following context, respond appropriately to the input query.
-    Context: {context}
-    Input: {query}
-    """
-    after_rag_prompt = ChatPromptTemplate.from_template(after_rag_template)
-    after_rag_chain = (
-        {"context": retriever, "query": RunnablePassthrough()}
-        | after_rag_prompt
-        | model_local
-        | StrOutputParser()
-    )
-    return after_rag_chain.invoke(q_n_a)
-
 # Define Gradio Blocks
 with gr.Blocks(css="""
     #results-box {
