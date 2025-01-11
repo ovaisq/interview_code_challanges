@@ -38,9 +38,9 @@ PGVECTOR_CONNECTION2 = {
                        }
 dsn = make_dsn(**PGVECTOR_CONNECTION2)
 
-os.environ['OLLAMA_HOST'] = "" #without setting this, the app will error out
+os.environ['OLLAMA_HOST'] = "" # assumes ollama is running locally; add url otherwise
 
-def process_input(urls, query):
+def process_input(urls, q_n_a):
     model_local = ChatOllama(model="llama3.2", temperature=0.7)
 
     # Convert string of URLs to list
@@ -102,7 +102,7 @@ def process_input(urls, query):
         | model_local
         | StrOutputParser()
     )
-    return after_rag_chain.invoke(query)
+    return after_rag_chain.invoke(q_n_a)
 
 # Define Gradio Blocks
 with gr.Blocks(css="""
@@ -115,16 +115,16 @@ with gr.Blocks(css="""
     }
 """, theme=gr.themes.Ocean()) as ui:
     gr.Markdown("# Chat Ollama")
-    gr.Markdown("Enter URLs and a query (question or instruction) to interact with the documents.")
+    gr.Markdown("Enter URLs and a question or an instruction to interact with the conent.")
 
     with gr.Row():
         urls = gr.Textbox(label="Enter URLs separated by new lines", lines=5)
-        query = gr.Textbox(label="Query (Question or Instruction)")
+        q_n_a = gr.Textbox(label="Question or an Instruction")
 
     results = gr.Markdown(elem_id="results-box")
 
     submit_button = gr.Button("Submit")
-    submit_button.click(fn=process_input, inputs=[urls, query], outputs=[results])
+    submit_button.click(fn=process_input, inputs=[urls, q_n_a], outputs=[results])
 
 # bind to any ip, and make it mobile friendly
 ui.launch(server_name="0.0.0.0", pwa=True)
