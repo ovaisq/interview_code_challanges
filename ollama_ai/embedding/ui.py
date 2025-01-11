@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 
 import os
+import psycopg2
+from psycopg2.extensions import make_dsn
 from config import get_config
 
 import gradio as gr
 from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader
 from langchain_postgres import PGVector
 from langchain_community.vectorstores import Chroma
-from langchain_ollama import OllamaEmbeddings as embeddings #new
-#from langchain_community.llms.ollama import Ollama as ChatOllama
-from langchain_ollama import ChatOllama #new
+from langchain_ollama import OllamaEmbeddings as embeddings
+from langchain_ollama import ChatOllama
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.output_parsers import PydanticOutputParser
 from langchain.text_splitter import CharacterTextSplitter
+from langchain.schema import Document
 
 # Database connection details
 
@@ -27,10 +29,19 @@ password = CONFIG.get('psqldb','password')
 port = CONFIG.get('psqldb','port')
 
 PGVECTOR_CONNECTION = f"postgresql+psycopg://{user}:{password}@{host}:5432/{database}"
+PGVECTOR_CONNECTION2 = {
+                        "host": host,
+                        "port": "5432",
+                        "dbname": database,
+                        "user": user,
+                        "password": password
+                       }
+dsn = make_dsn(**PGVECTOR_CONNECTION2)
+
 os.environ['OLLAMA_HOST'] = "" #without setting this, the app will error out
 
 def process_input(urls, query):
-    model_local = ChatOllama(model="llama3.2", temperature=0)
+    model_local = ChatOllama(model="llama3.2", temperature=0.7)
 
     # Convert string of URLs to list
     urls_list = urls.split("\n")
@@ -40,16 +51,42 @@ def process_input(urls, query):
     text_splitter = CharacterTextSplitter.from_tiktoken_encoder(chunk_size=7500, chunk_overlap=100)
     doc_splits = text_splitter.split_documents(docs_list)
 
-    # Initialize the embeddings model
-    embedding_model = embeddings(model="nomic-embed-text")
-
     # Initialize PGVector
-    vectorstore = PGVector.from_documents(
-        documents=doc_splits,
-        embedding=embedding_model,
-        connection=PGVECTOR_CONNECTION,
-        collection_name="rag_pgvector",
-    )
+    try:
+        # Initialize the embeddings model
+        embedding_model = embeddings(model="nomic-embed-text")
+
+        # Initialize PGVector
+        vectorstore = PGVector.from_documents(doc_splits, embedding_model, connection=PGVECTOR_CONNECTION)
+
+        # Create a new connection and use this for adding documents.
+        #  We create a new connection each time so that we don't
+        #  accidentally add documents using the wrong database state
+        #  (e.g., if you have multiple threads).
+        conn = psycopg2.connect(dsn)
+
+        with conn:
+            cur = conn.cursor()
+            for doc in doc_splits:
+                document = doc.page_content if hasattr(doc, 'page_content') else str(doc)
+                # Check whether this document is already present
+                sql_query = "SELECT id FROM rag_pgvector WHERE document = %s"
+                cur.execute(sql_query, (document,))
+
+                # If no row was returned, then the document is not yet in the table.
+                if not cur.fetchone():
+                    # Convert the doc to a Document object
+                    new_document = Document(page_content=document)
+
+                    # Add the document to the vector store
+                    vectorstore.add_documents([new_document])
+
+    except Exception as e:
+        # Get the full traceback for debugging
+        import traceback
+        traceback_details = traceback.format_exc()
+        print(f"Traceback Details:\n{traceback_details}")
+
     retriever = vectorstore.as_retriever()
 
     # Template for handling both questions and instructions
@@ -91,4 +128,3 @@ with gr.Blocks(css="""
 
 # bind to any ip, and make it mobile friendly
 ui.launch(server_name="0.0.0.0", pwa=True)
-
