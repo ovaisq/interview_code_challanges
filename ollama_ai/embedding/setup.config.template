@@ -4,3 +4,7 @@ port=5432
 database=
 user=
 password=
+
+[ai]
+OLLAMA_HOST=http://
+LLM=dolphin3

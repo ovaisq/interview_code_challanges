@@ -16,6 +16,8 @@ from psycopg2.extensions import make_dsn
 import gradio as gr
 import os
 import psycopg2
+import traceback
+from typing import List, Optional
 
 
 # Database connection details
@@ -28,6 +30,9 @@ user = CONFIG.get('psqldb','user')
 password = CONFIG.get('psqldb','password')
 port = CONFIG.get('psqldb','port')
 
+OLLAMA_HOST = CONFIG.get('ai','OLLAMA_HOST')
+LLM = CONFIG.get('ai','LLM')
+
 PGVECTOR_CONNECTION = f"postgresql+psycopg://{user}:{password}@{host}:5432/{database}"
 PGVECTOR_CONNECTION2 = {
                         "host": host,
@@ -38,14 +43,46 @@ PGVECTOR_CONNECTION2 = {
                        }
 dsn = make_dsn(**PGVECTOR_CONNECTION2)
 
-os.environ['OLLAMA_HOST'] = "" # assumes ollama is running locally; add url otherwise
+# location of OLLAMA_HOST
+if OLLAMA_HOST:
+    os.environ['OLLAMA_HOST'] = OLLAMA_HOST # assumes ollama is running remotely
+else:
+    os.environ['OLLAMA_HOST'] = "" # assumes ollama is running locally
 
-def process_input(urls, q_n_a):
-    model_local = ChatOllama(model="llama3.2", temperature=0.7)
+def process_input(urls: str, q_n_a: str) -> any:
+    """Processes input URLs to load documents, embeds them using PGVector,
+        retrieves context for a query, and invokes a RAG chain for response generation.
+
+        Parameters:
+            - urls (str): A newline-separated string of URLs from which content will be loaded.
+                        Must not be empty or contain only whitespace.
+            - q_n_a (str): The input query to be processed using the retrieved document context.
+
+        Returns:
+            - any: The generated response after invoking the RAG chain, if successful;
+                    otherwise, None. An empty or invalid response results in None.
+
+        Raises:
+            - Prints error messages and returns None for various failure scenarios, including
+                URL loading errors, database connection issues, and invocation failures.
+        
+        Example usage:
+        >>> result = process_input("http://example.com\nhttp://another-example.com", "What is the main topic?")
+        >>> print(result)
+    """
+
+    model = LLM if LLM else "llama3.2"
+    model_local = ChatOllama(model=model, temperature=0.7)
 
     # Convert string of URLs to list
-    urls_list = urls.split("\n")
-    docs = [WebBaseLoader(url).load() for url in urls_list]
+    urls_list: List[str] = urls.split("\n")
+    
+    try:
+        docs = [WebBaseLoader(url).load() for url in urls_list]
+    except Exception as e:
+        print(f"Error loading documents from URLs: {e}")
+        return None
+
     docs_list = [item for sublist in docs for item in sublist]
 
     text_splitter = CharacterTextSplitter.from_tiktoken_encoder(chunk_size=7500, chunk_overlap=100)
@@ -53,39 +90,44 @@ def process_input(urls, q_n_a):
 
     # Initialize PGVector
     try:
-        # Initialize the embeddings model
         embedding_model = embeddings(model="nomic-embed-text")
-
-        # Initialize PGVector
         vectorstore = PGVector.from_documents(doc_splits, embedding_model, connection=PGVECTOR_CONNECTION)
 
-        # Create a new connection and use this for adding documents.
-        #  We create a new connection each time so that we don't
-        #  accidentally add documents using the wrong database state
-        #  (e.g., if you have multiple threads).
         conn = psycopg2.connect(dsn)
-
         with conn:
             cur = conn.cursor()
             for doc in doc_splits:
-                document = doc.page_content if hasattr(doc, 'page_content') else str(doc)
-                # Check whether this document is already present
+                document: Optional[str] = getattr(doc, 'page_content', str(doc))
+                
                 sql_query = "SELECT id FROM rag_pgvector WHERE document = %s"
                 cur.execute(sql_query, (document,))
-
-                # If no row was returned, then the document is not yet in the table.
+                
                 if not cur.fetchone():
-                    # Convert the doc to a Document object
                     new_document = Document(page_content=document)
-
-                    # Add the document to the vector store
                     vectorstore.add_documents([new_document])
-
     except Exception as e:
-        # Get the full traceback for debugging
-        import traceback
         traceback_details = traceback.format_exc()
         print(f"Traceback Details:\n{traceback_details}")
+        return None
+
+    retriever = vectorstore.as_retriever()
+
+    after_rag_template = """
+    Based on the following context, respond appropriately to the input query.
+    Context: {context}
+    Input: {query}
+    """
+
+    after_rag_prompt = ChatPromptTemplate.from_template(after_rag_template)
+    after_rag_chain = (
+        {"context": retriever, "query": RunnablePassthrough()}
+        | after_rag_prompt
+        | model_local
+        | StrOutputParser()
+    )
+
+    return after_rag_chain.invoke(q_n_a)
+
 
     retriever = vectorstore.as_retriever()
 
