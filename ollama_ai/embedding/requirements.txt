@@ -1,6 +1,7 @@
 gradio==5.10.0
 pq
 psycopg[binary,pool]
+psycopg2-binary
 langchain
 langchain_community
 langchain_core
