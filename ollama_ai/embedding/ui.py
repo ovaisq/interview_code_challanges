@@ -1,22 +1,54 @@
 #!/usr/bin/env python3
+"""
+    Chat Ollama Module
+
+    Module Name: ChatOllama
+
+    Description:
+        This module is a web-based interface that uses natural language processing (NLP) techniques
+        to generate human-like responses based on user input. It connects to a PostgreSQL database
+        to retrieve and store knowledge graph data.
+
+    Functions:
+
+    *   extract_section(text): Extracts the topic relevant keywords section from a given text.
+    *   remove_section(text): Removes the topic relevant keywords section from a given text.
+    *   load_documents(urls): Loads documents from a list of URLs using the WebBaseLoader.
+    *   embed_and_store_documents(documents): Embeds documents and stores them in PGVector.
+    *   query_documents(urls, query): Queries the documents for the given question or instruction
+        using the ChatOllama model.
+    *   process_input(urls, q_n_a): Processes the input URLs and query to generate a response.
+
+    Usage:
+        To use this module, simply run the script and navigate to the provided URL in your browser.
+        Enter URLs separated by newline characters and a question or instruction to receive a
+            response.
+
+    Requirements:
+        This module requires the following dependencies: gradio, psycopg2, langchain_ollama,
+        langchain_community, langchain_postgres, re, traceback, os, psycopg2.extensions
+
+    Author:
+        ©2024, Ovais Quraishi
+"""
+
+import os
+import re
+import traceback
+from typing import List
+
+import gradio as gr
+import psycopg2
+from psycopg2.extensions import make_dsn
 
 from config import get_config
-from langchain.output_parsers import PydanticOutputParser
 from langchain.schema import Document
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.document_loaders import WebBaseLoader
-from langchain_community.vectorstores import Chroma
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama import ChatOllama
-from langchain_ollama import OllamaEmbeddings
+from langchain_ollama import ChatOllama, OllamaEmbeddings
+
 from langchain_postgres import PGVector
-from psycopg2.extensions import make_dsn
-import gradio as gr
-import os
-import psycopg2
-import traceback
-from typing import List
 
 # Configuration
 CONFIG = get_config()
@@ -37,10 +69,28 @@ if OLLAMA_HOST:
 else:
     os.environ['OLLAMA_HOST'] = ""
 
-def load_documents(urls: List[str]) -> List[Document]:
+def extract_section(text):
+    """Extract Topic Relevant Keywords section"""
+
+    pattern = r'Topic-Relevant Keywords:\n(.*?)\Z'
+    match = re.search(pattern, text, re.DOTALL)
+    if match:
+        return match.group(0).strip()
+    else:
+        return None
+
+def remove_section(text):
+    """Remove Topic Relevant Keywords section"""
+
+    pattern = r'Topic-Relevant Keywords:\n(.*?)\Z'
+    text_without_section = re.sub(pattern, '', text, flags=re.DOTALL)
+    return text_without_section.strip()
+
+def load_documents(url_list: List[str]) -> List[Document]:
     """Loads documents from a list of URLs."""
+
     try:
-        docs = [WebBaseLoader(url).load() for url in urls]
+        docs = [WebBaseLoader(url).load() for url in url_list]
         return [item for sublist in docs for item in sublist]
     except Exception as e:
         print(f"Error loading documents: {e}")
@@ -48,36 +98,41 @@ def load_documents(urls: List[str]) -> List[Document]:
 
 def embed_and_store_documents(documents: List[Document]):
     """Embeds documents and stores them in PGVector."""
-    
+
     try:
-        text_splitter = CharacterTextSplitter.from_tiktoken_encoder(chunk_size=7500, chunk_overlap=100)
+        text_splitter = CharacterTextSplitter.from_tiktoken_encoder(chunk_size=7500,
+                                                                    chunk_overlap=100)
         doc_splits = text_splitter.split_documents(documents)
 
         embedding_model = OllamaEmbeddings(model="nomic-embed-text")
-        vectorstore = PGVector.from_documents(doc_splits, embedding_model, connection=PGVECTOR_CONNECTION)
+        vectorstore = PGVector.from_documents(doc_splits, embedding_model,
+                                                connection=PGVECTOR_CONNECTION)
 
-        with psycopg2.connect(make_dsn(host=host, port=port, dbname=database, user=user, password=password)) as conn:
+        with psycopg2.connect(make_dsn(host=host, port=port, dbname=database,
+                                        user=user, password=password)) as conn:
             with conn.cursor() as cur:
                 for doc in doc_splits:
-                    cur.execute("SELECT id FROM rag_pgvector WHERE document = %s", (doc.page_content,))
+                    cur.execute("SELECT id FROM rag_pgvector WHERE document = %s",
+                                (doc.page_content,))
                     if not cur.fetchone():
                         vectorstore.add_documents([Document(page_content=doc.page_content)])
     except Exception as e:
         print(f"Error embedding documents: {e}\n{traceback.format_exc()}")
 
-def query_documents(urls: List[str], query: str) -> str:
+def query_documents(url_list: List[str], query: str) -> str:
     """Queries the documents for the given question or instruction."""
-    
+
     try:
         # Load and process documents
-        documents = load_documents(urls)
+        documents = load_documents(url_list)
         if not documents:
             return "No documents found or failed to load documents."
 
         embed_and_store_documents(documents)
 
         # Combine all document content into a single context string
-        text_splitter = CharacterTextSplitter.from_tiktoken_encoder(chunk_size=7500, chunk_overlap=100)
+        text_splitter = CharacterTextSplitter.from_tiktoken_encoder(chunk_size=7500,
+                                                                    chunk_overlap=100)
         doc_splits = text_splitter.split_documents(documents)
         retriever_context = "\n".join([doc.page_content for doc in doc_splits])
 
@@ -92,8 +147,13 @@ def query_documents(urls: List[str], query: str) -> str:
         # Initialize the model
         model = ChatOllama(model=LLM, temperature=0.7)
 
+        append_query = (
+            "Additionally, list 3 topic-relevant keywords as a numbered "
+            "list at the end. Always label the list with 'Topic-Relevant Keywords:'"
+        )
+
         # Create the input for the pipeline
-        input_data = {"context": retriever_context, "query": query}
+        input_data = {"context": retriever_context, "query": query + append_query}
 
         # Run the pipeline
         prompt_result = prompt.invoke(input_data)  # Process input through the prompt
@@ -104,18 +164,29 @@ def query_documents(urls: List[str], query: str) -> str:
         print(f"Error querying documents: {e}\n{traceback.format_exc()}")
         return "An error occurred while processing the query."
 
-def process_input(urls: str, q_n_a: str) -> str:
+def process_input(urls_str: str, q_n_i: str) -> str:
     """Processes the input URLs and query to generate a response."""
-    
-    urls_list = urls.strip().split("\n")
-    if not urls_list or not q_n_a.strip():
+
+    urls_list = urls_str.strip().split("\n")
+    if not urls_list or not q_n_i.strip():
         return "Please provide valid URLs and a question or instruction."
 
-    return query_documents(urls_list, q_n_a)
+    orig_results = query_documents(urls_list, q_n_i)
+    keyword_list = extract_section(orig_results)
+    new_results = remove_section(orig_results)
+
+    return new_results, keyword_list
 
 # Define Gradio UI
 with gr.Blocks(css="""
     #results-box {
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #737373;
+        min-height: 100px;
+    }
+    #keywords-box {
         border: 1px solid #ccc;
         padding: 10px;
         border-radius: 5px;
@@ -130,9 +201,11 @@ with gr.Blocks(css="""
         urls = gr.Textbox(label="Enter URLs (newline-separated)", lines=5)
         q_n_a = gr.Textbox(label="Question or Instruction")
 
-    results = gr.Markdown(elem_id="results-box")
+    with gr.Row():
+        results = gr.Markdown(elem_id="results-box", label="Results")
+        keywords = gr.Markdown(elem_id="keywords-box", label="Keyword List")
 
     submit_button = gr.Button("Submit")
-    submit_button.click(fn=process_input, inputs=[urls, q_n_a], outputs=[results])
+    submit_button.click(fn=process_input, inputs=[urls, q_n_a], outputs=[results, keywords])
 
 ui.launch(server_name="0.0.0.0", pwa=True)
