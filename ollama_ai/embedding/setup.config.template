@@ -8,3 +8,6 @@ password=
 [ai]
 OLLAMA_HOST=http://
 LLM=dolphin3
+
+[service]
+version=SEMVER

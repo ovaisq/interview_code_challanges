@@ -8,6 +8,7 @@ ENV PIP_BREAK_SYSTEM_PACKAGES=1
 ENV USER_AGENT="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)"
 
 # Copy necessary files to /app directory
+COPY ver.txt /app
 COPY config.py /app
 COPY ui.py /app
 COPY setup.config /app

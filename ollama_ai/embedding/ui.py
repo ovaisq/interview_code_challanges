@@ -62,6 +62,8 @@ port = CONFIG.get('psqldb', 'port')
 OLLAMA_HOST = CONFIG.get('ai', 'OLLAMA_HOST')
 LLM = CONFIG.get('ai', 'LLM') or "llama3.2"
 
+SERVICE_VERSION = CONFIG.get('service', 'version')
+
 PGVECTOR_CONNECTION = f"postgresql+psycopg://{user}:{password}@{host}:5432/{database}"
 
 if OLLAMA_HOST:
@@ -149,7 +151,9 @@ def query_documents(url_list: List[str], query: str) -> str:
 
         append_query = (
             "Additionally, list 3 topic-relevant keywords as a numbered "
-            "list at the end. Always label the list with 'Topic-Relevant Keywords:'"
+            "list at the end. Always label the list with exact same title "
+            "'Topic-Relevant Keywords:'. Nothing should follow this list of "
+            "3 items."
         )
 
         # Create the input for the pipeline
@@ -205,7 +209,8 @@ with gr.Blocks(css="""
         results = gr.Markdown(elem_id="results-box", label="Results")
         keywords = gr.Markdown(elem_id="keywords-box", label="Keyword List")
 
+
     submit_button = gr.Button("Submit")
     submit_button.click(fn=process_input, inputs=[urls, q_n_a], outputs=[results, keywords])
-
+    gr.Markdown(f"<div style='text-align: center; font-size: 1.2em;'>v{SERVICE_VERSION}</div>")
 ui.launch(server_name="0.0.0.0", pwa=True)
