@@ -1,0 +1,5 @@
+on:
+  push:
+    branches:
+      - main  # or any specific branch
+  workflow_dispatch:  # Allows manual trigger from GitHub UI

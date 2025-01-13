@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: summarize-web-pages
-        image: docker:5000/summarize-web-pages:SEMVER
+        image: DOCKER_HOST_URI/summarize-web-pages:SEMVER
         imagePullPolicy: Always
         ports:
         - containerPort: 7860

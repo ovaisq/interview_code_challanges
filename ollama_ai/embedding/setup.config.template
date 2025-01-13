@@ -1,12 +1,12 @@
 [psqldb]
-host=
+host=PSQLHOST
 port=5432
-database=
-user=
-password=
+database=PSQLDB
+user=PSQLUSER
+password=PSQLPASS
 
 [ai]
-OLLAMA_HOST=http://
+OLLAMA_HOST=OLLAMA_HOST_URL
 LLM=dolphin3
 
 [service]

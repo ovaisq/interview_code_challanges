@@ -1,0 +1,68 @@
+name: Build and Deploy
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  build-deploy:
+    runs-on: self-hosted
+    steps:
+      # Checkout the code from the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Navigate to the specific service directory and execute subsequent commands in this context
+      - name: Change Directory and Run Steps
+        run: |
+          cd ollama_ai/embedding || exit 1
+          echo "Changed directory to $PWD"
+
+          # Read version from ver.txt and set as an env variable
+          echo "MY_VER=$(cat ver.txt)" >> $GITHUB_ENV
+
+      - name: Build Docker Container 
+        env:
+          PSQLHOST: ${{ vars.PSQLHOST }}
+          PSQLDB: ${{ vars.PSQLDB }}
+          PSQLUSER: ${{ vars.PSQLUSER }}
+          PSQLPASS: ${{ secrets.PSQLPASS }}
+          OLLAMA_HOST_URL: ${{ vars.OLLAMA_HOST_URL }}
+          MY_VER: ${{ env.MY_VER }}
+        run: |
+          cd ollama_ai/embedding || exit 1
+          echo "Changed directory to $PWD"
+
+          # Build Docker image using the script provided
+          cp setup.config.template setup.config
+          sed -i "s|PSQLHOST|$PSQLHOST|" setup.config
+          sed -i "s|PSQLDB|$PSQLDB|" setup.config
+          sed -i "s|PSQLUSER|$PSQLUSER|" setup.config
+          sed -i "s|PSQLPASS|$PSQLPASS|" setup.config
+          sed -i "s|OLLAMA_HOST_URL|$OLLAMA_HOST_URL|" setup.config
+          sed -i "s|SEMVER|$MY_VER|" setup.config
+          python3 build_docker.py
+
+
+      - name:
+        env:
+          DOCKER_HOST_URI: ${{ vars.DOCKER_HOST_URI }}
+          SERVICE_NAME: ${{ vars.SERVICE_NAME}}
+          MY_VER: ${{ env.MY_VER }}
+        run: |
+          cd ollama_ai/embedding || exit 1
+          echo "Changed directory to $PWD"
+
+          # Push Docker image to registry
+          echo "docker tag $SERVICE_NAME:$MY_VER $DOCKER_HOST_URI/$SERVICE_NAME:$MY_VER"
+          docker tag "$SERVICE_NAME:$MY_VER" "$DOCKER_HOST_URI/$SERVICE_NAME:$MY_VER"
+          echo "docker push $DOCKER_HOST_URI/$SERVICE_NAME:$MY_VER"
+          docker push "$DOCKER_HOST_URI/$SERVICE_NAME:$MY_VER"
+
+          # Deploy to Kubernetes
+          sed -i "s|SEMVER|$MY_VER|" deployment.yaml
+          sed -i "s|DOCKER_HOST_URI|$DOCKER_HOST_URI|" deployment.yaml
+          kubectl apply -f deployment.yaml
+          kubectl apply -f service.yaml
+
+      # Ensure Docker and Kubernetes CLI are set up on the self-hosted runner if not pre-installed
