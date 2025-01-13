@@ -29,7 +29,7 @@
         langchain_community, langchain_postgres, re, traceback, os, psycopg2.extensions
 
     Author:
-        ©2024, Ovais Quraishi
+        ©2025, Ovais Quraishi
 """
 
 import os
@@ -152,8 +152,7 @@ def query_documents(url_list: List[str], query: str) -> str:
         append_query = (
             "Additionally, list 3 topic-relevant keywords as a numbered "
             "list at the end. Always label the list with exact same title "
-            "'Topic-Relevant Keywords:'. Nothing should follow this list of "
-            "3 items."
+            "'Topic-Relevant Keywords:'. This must be a list of three nothing else."
         )
 
         # Create the input for the pipeline
@@ -212,5 +211,5 @@ with gr.Blocks(css="""
 
     submit_button = gr.Button("Submit")
     submit_button.click(fn=process_input, inputs=[urls, q_n_a], outputs=[results, keywords])
-    gr.Markdown(f"<div style='text-align: center; font-size: 1.2em;'>v{SERVICE_VERSION}</div>")
+    gr.Markdown(f"<div style='text-align: center; font-size: 1.2em;'>LLM: {LLM}<br>v{SERVICE_VERSION}</div>")
 ui.launch(server_name="0.0.0.0", pwa=True)
