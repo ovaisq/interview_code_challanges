@@ -21,6 +21,11 @@ To run the application, follow these steps:
 1. Install Python 3.x on your system.
 2. Install the required packages using pip: `pip install -r requirements.txt`
 3. Clone this repository or download the code manually.
+4. GitHub Actions require following Secrets and Vars set up.
+
+![Git Hub Secrets](github_actions_secrets.png)
+![Git Hub Variables](github_actions_vars.png)
+
 
 Usage
 -----
