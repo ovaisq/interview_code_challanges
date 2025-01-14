@@ -33,7 +33,7 @@ apply_kubernetes() {
 # Read version from ver.txt
 my_ver=$(<ver.txt)
 
-docker_host_uri="docker:5000"
+docker_host_uri="jenkins-node-1:5000"
 service_name="summarize-web-pages"
 
 # Call the functions with the version as an argument
