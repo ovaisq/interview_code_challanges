@@ -74,15 +74,19 @@ else:
 def extract_section(text):
     """Extract Topic Relevant Keywords section"""
 
-    pattern = r'Topic-Relevant Keywords:\n(.*?)\Z'
+    # Adjust pattern to handle ** and without **, and newlines in the section
+    pattern = r"(\*?\*?Topic-Relevant Keywords:\*?\*?\s*(?:.*\n){3})"
     match = re.search(pattern, text, re.DOTALL)
-    return match.group(0).strip() if match else None
+    result = match.group(0).strip() if match else None
+    return result
 
 def remove_section(text):
     """Remove Topic Relevant Keywords section"""
 
-    pattern = r'Topic-Relevant Keywords:\n(.*?)\Z'
-    return re.sub(pattern, '', text, flags=re.DOTALL).strip()
+    # Adjust pattern to handle ** and without **, and newlines in the section
+    pattern = r"(\*?\*?Topic-Relevant Keywords:\*?\*?\s*(?:.*\n){3})"
+    result = re.sub(pattern, '', text, flags=re.DOTALL).strip()
+    return result
 
 def load_documents(url_list: List[str]) -> List[Document]:
     """Loads documents from a list of URLs."""
@@ -158,7 +162,6 @@ def query_documents(url_list: List[str], query: str) -> str:
         prompt_result = prompt.invoke(input_data)  # Process input through the prompt
         model_result = model.invoke(prompt_result)  # Process the prompt result through the model
         return model_result.content if hasattr(model_result, "content") else "No content available."
-        #return model_result.get("content", "No content available.")
     except Exception as e:
         print(f"Error querying documents: {e}\n{traceback.format_exc()}")
         return "An error occurred while processing the query."
@@ -170,7 +173,7 @@ def process_input(urls_str: str, q_n_i: str) -> str:
     if not urls_list or not q_n_i.strip():
         return "Invalid input"
 
-    orig_results = query_documents(urls_list, q_n_i)
+    orig_results = (query_documents(urls_list, q_n_i) + '\n')
     keyword_list = extract_section(orig_results)
     new_results = remove_section(orig_results)
 
