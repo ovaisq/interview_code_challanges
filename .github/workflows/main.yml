@@ -41,7 +41,7 @@ jobs:
           sed -i "s|PSQLPASS|$PSQLPASS|" setup.config
           sed -i "s|OLLAMA_HOST_URL|$OLLAMA_HOST_URL|" setup.config
           sed -i "s|SEMVER|$MY_VER|" setup.config
-          python3 build_docker.py
+          python3 build_docker.py > /dev/null 2>&1
 
 
       - name:
@@ -55,14 +55,12 @@ jobs:
 
           # Push Docker image to registry
           echo "docker tag $SERVICE_NAME:$MY_VER $DOCKER_HOST_URI/$SERVICE_NAME:$MY_VER"
-          docker tag "$SERVICE_NAME:$MY_VER" "$DOCKER_HOST_URI/$SERVICE_NAME:$MY_VER"
+          docker tag "$SERVICE_NAME:$MY_VER" "$DOCKER_HOST_URI/$SERVICE_NAME:$MY_VER" > /dev/null 2>&1
           echo "docker push $DOCKER_HOST_URI/$SERVICE_NAME:$MY_VER"
-          docker push "$DOCKER_HOST_URI/$SERVICE_NAME:$MY_VER"
+          docker push "$DOCKER_HOST_URI/$SERVICE_NAME:$MY_VER" > /dev/null 2>&1
 
           # Deploy to Kubernetes
           sed -i "s|SEMVER|$MY_VER|" deployment.yaml
           sed -i "s|DOCKER_HOST_URI|$DOCKER_HOST_URI|" deployment.yaml
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
-
-      # Ensure Docker and Kubernetes CLI are set up on the self-hosted runner if not pre-installed
