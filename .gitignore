@@ -10,6 +10,7 @@ __pycache__
 .vscode/
 builds/
 setup.config
+config_vals.txt
 sonar_it.sh
 BUILD_INFO.TXT
 FE_BUILD_INFO.TXT
