@@ -44,7 +44,7 @@ jobs:
           python3 build_docker.py > /dev/null 2>&1
 
 
-      - name:
+      - name: Tag and Push Docker Image, deploy Service to Kubernetes Cluster
         env:
           DOCKER_HOST_URI: ${{ vars.DOCKER_HOST_URI }}
           SERVICE_NAME: ${{ vars.SERVICE_NAME}}
