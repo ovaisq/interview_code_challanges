@@ -7,7 +7,7 @@ password=PSQLPASS
 
 [ai]
 OLLAMA_HOST=OLLAMA_HOST_URL
-LLM=dolphin3
+LLM=olmo2:13b
 
 [service]
 version=SEMVER

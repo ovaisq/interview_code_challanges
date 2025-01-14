@@ -76,17 +76,13 @@ def extract_section(text):
 
     pattern = r'Topic-Relevant Keywords:\n(.*?)\Z'
     match = re.search(pattern, text, re.DOTALL)
-    if match:
-        return match.group(0).strip()
-    else:
-        return None
+    return match.group(0).strip() if match else None
 
 def remove_section(text):
     """Remove Topic Relevant Keywords section"""
 
     pattern = r'Topic-Relevant Keywords:\n(.*?)\Z'
-    text_without_section = re.sub(pattern, '', text, flags=re.DOTALL)
-    return text_without_section.strip()
+    return re.sub(pattern, '', text, flags=re.DOTALL).strip()
 
 def load_documents(url_list: List[str]) -> List[Document]:
     """Loads documents from a list of URLs."""
@@ -172,7 +168,7 @@ def process_input(urls_str: str, q_n_i: str) -> str:
 
     urls_list = urls_str.strip().split("\n")
     if not urls_list or not q_n_i.strip():
-        return "Please provide valid URLs and a question or instruction."
+        return "Invalid input"
 
     orig_results = query_documents(urls_list, q_n_i)
     keyword_list = extract_section(orig_results)
@@ -212,4 +208,5 @@ with gr.Blocks(css="""
     submit_button = gr.Button("Submit")
     submit_button.click(fn=process_input, inputs=[urls, q_n_a], outputs=[results, keywords])
     gr.Markdown(f"<div style='text-align: center; font-size: 1.2em;'>LLM: {LLM}<br>v{SERVICE_VERSION}</div>")
-ui.launch(server_name="0.0.0.0", pwa=True)
+if __name__ == "__main__":
+    ui.launch(server_name="0.0.0.0", pwa=True)
