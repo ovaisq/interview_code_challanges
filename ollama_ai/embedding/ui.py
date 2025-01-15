@@ -61,6 +61,7 @@ port = CONFIG.get('psqldb', 'port')
 
 OLLAMA_HOST = CONFIG.get('ai', 'OLLAMA_HOST')
 LLM = CONFIG.get('ai', 'LLM') or "llama3.2"
+EMBED_MODEL = "nomic-embed-text"
 
 SERVICE_VERSION = CONFIG.get('service', 'version')
 
@@ -106,7 +107,7 @@ def embed_and_store_documents(documents: List[Document]):
                                                                     chunk_overlap=100)
         doc_splits = text_splitter.split_documents(documents)
 
-        embedding_model = OllamaEmbeddings(model="nomic-embed-text")
+        embedding_model = OllamaEmbeddings(model=EMBED_MODEL)
         vectorstore = PGVector.from_documents(doc_splits, embedding_model,
                                                 connection=PGVECTOR_CONNECTION)
 
@@ -207,9 +208,8 @@ with gr.Blocks(css="""
         results = gr.Markdown(elem_id="results-box", label="Results")
         keywords = gr.Markdown(elem_id="keywords-box", label="Keyword List")
 
-
     submit_button = gr.Button("Submit")
     submit_button.click(fn=process_input, inputs=[urls, q_n_a], outputs=[results, keywords])
-    gr.Markdown(f"<div style='text-align: center; font-size: 1.2em;'>LLM: {LLM}<br>v{SERVICE_VERSION}</div>")
+    gr.Markdown(f"<div style='text-align: center; font-size: 1.2em;'><b>LLM</b>: {LLM}<br><b>Embeddings</b>: {EMBED_MODEL}<br>v{SERVICE_VERSION}</div>")
 if __name__ == "__main__":
     ui.launch(server_name="0.0.0.0", pwa=True)

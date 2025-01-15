@@ -10,3 +10,4 @@ langchain_postgres
 pgvector
 bs4
 tiktoken
+duckduckgo_search
