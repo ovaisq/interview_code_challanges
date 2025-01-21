@@ -10,10 +10,11 @@ ENV USER_AGENT="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like 
 # Copy necessary files to /app directory
 COPY ver.txt /app
 COPY config.py /app
+COPY websearch.py /app
 COPY ui.py /app
 COPY setup.config /app
 COPY requirements.txt /app
-RUN pip install --upgrade pip
+RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Service config

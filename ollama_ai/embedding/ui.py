@@ -1,35 +1,34 @@
 #!/usr/bin/env python3
-"""
-    Chat Ollama Module
+"""Chat Ollama Web Assistant
 
-    Module Name: ChatOllama
+	This application leverages Gradio to create an interactive user interface
+	for querying a set of web documents and generating responses based on their
+	content. It integrates with OpenAI's language models, PostgreSQL for data
+	storage and retrieval, and vector embeddings to enhance the search
+	capabilities. The app also utilizes custom modules like `duckduckgo_search` to
+	perform DuckDuckGo searches and generate HTML lists.
 
-    Description:
-        This module is a web-based interface that uses natural language processing (NLP) techniques
-        to generate human-like responses based on user input. It connects to a PostgreSQL database
-        to retrieve and store knowledge graph data.
+	Key Features:
+        - Accepts multiple URLs as input.
+        - Processes the text from these URLs using NLP techniques to embed them
+            into vectors.
+        - Stores these vectors in a PostgreSQL database for efficient querying.
+        - Allows users to enter questions or instructions that are then used to
+            query the embedded document content.
+        - Generates responses based on the queried information, appending
+            topic-relevant keywords.
+        - Uses DuckDuckGo to search for keyphrases extracted from processed text
+            and generate HTML ordered lists.
 
-    Functions:
+	User Interface:
+        - Textbox for entering multiple newline-separated URLs.
+        - Textbox for inputting questions or instructions.
+        - Buttons and outputs for displaying the processed results, keyword list,
+            and HTML content.
 
-    *   extract_section(text): Extracts the topic relevant keywords section from a given text.
-    *   remove_section(text): Removes the topic relevant keywords section from a given text.
-    *   load_documents(urls): Loads documents from a list of URLs using the WebBaseLoader.
-    *   embed_and_store_documents(documents): Embeds documents and stores them in PGVector.
-    *   query_documents(urls, query): Queries the documents for the given question or instruction
-        using the ChatOllama model.
-    *   process_input(urls, q_n_a): Processes the input URLs and query to generate a response.
-
-    Usage:
-        To use this module, simply run the script and navigate to the provided URL in your browser.
-        Enter URLs separated by newline characters and a question or instruction to receive a
-            response.
-
-    Requirements:
-        This module requires the following dependencies: gradio, psycopg2, langchain_ollama,
-        langchain_community, langchain_postgres, re, traceback, os, psycopg2.extensions
-
-    Author:
-        ©2025, Ovais Quraishi
+	Execution:
+        Run this script as the main program, launching it on a server with the
+        option for PWA (Progressive Web App) support.
 """
 
 import os
@@ -49,6 +48,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 
 from langchain_postgres import PGVector
+
+from websearch import create_dict_list_from_text, generate_html_ordered_list
 
 # Configuration
 CONFIG = get_config()
@@ -177,8 +178,13 @@ def process_input(urls_str: str, q_n_i: str) -> str:
     orig_results = (query_documents(urls_list, q_n_i) + '\n')
     keyword_list = extract_section(orig_results)
     new_results = remove_section(orig_results)
+    # Generate the list of dictionaries from the sample text
+    dicts = create_dict_list_from_text(keyword_list)
+    # Generate and print the HTML ordered list
+    html_list = generate_html_ordered_list(dicts)
 
-    return new_results, keyword_list
+    return new_results, keyword_list, html_list
+
 
 # Define Gradio UI
 with gr.Blocks(css="""
@@ -196,8 +202,15 @@ with gr.Blocks(css="""
         background-color: #737373;
         min-height: 100px;
     }
+    #web-box {
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #000000;
+        min-height: 100px;
+    }
 """, theme=gr.themes.Ocean()) as ui:
-    gr.Markdown("# Chat Ollama")
+    gr.Markdown("# Chat Ollama Web Assistant")
     gr.Markdown("Enter URLs and a question or instruction to interact with the content.")
 
     with gr.Row():
@@ -205,11 +218,14 @@ with gr.Blocks(css="""
         q_n_a = gr.Textbox(label="Question or Instruction")
 
     with gr.Row():
-        results = gr.Markdown(elem_id="results-box", label="Results")
-        keywords = gr.Markdown(elem_id="keywords-box", label="Keyword List")
+        results = gr.Markdown(r"Response to Question or Instruction", elem_id="results-box", label="Results", show_copy_button=True)
+        keywords = gr.Markdown(r"Topic-Relevant Key Phrases",elem_id="keywords-box", label="Keyword List", show_copy_button=True)
+
+    with gr.Row():
+        html_list = gr.Markdown(r"Most recent web results", elem_id="web-box", show_copy_button=True)
 
     submit_button = gr.Button("Submit")
-    submit_button.click(fn=process_input, inputs=[urls, q_n_a], outputs=[results, keywords])
+    submit_button.click(fn=process_input, inputs=[urls, q_n_a], outputs=[results, keywords, html_list])
     gr.Markdown(f"<div style='text-align: center; font-size: 1.2em;'><b>LLM</b>: {LLM}<br><b>Embeddings</b>: {EMBED_MODEL}<br>v{SERVICE_VERSION}</div>")
 if __name__ == "__main__":
     ui.launch(server_name="0.0.0.0", pwa=True)
