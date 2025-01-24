@@ -49,7 +49,7 @@ from langchain_ollama import ChatOllama, OllamaEmbeddings
 
 from langchain_postgres import PGVector
 
-from websearch import create_dict_list_from_text, generate_html_ordered_list
+from websearch import create_dict_list_from_text, get_web_results_as_html
 
 # Configuration
 CONFIG = get_config()
@@ -181,9 +181,9 @@ def process_input(urls_str: str, q_n_i: str) -> str:
     # Generate the list of dictionaries from the sample text
     dicts = create_dict_list_from_text(keyword_list)
     # Generate and print the HTML ordered list
-    html_list = generate_html_ordered_list(dicts)
+    web_results_html = get_web_results_as_html(dicts)
 
-    return new_results, keyword_list, html_list
+    return new_results, keyword_list, web_results_html
 
 
 # Define Gradio UI

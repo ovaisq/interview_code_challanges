@@ -3,9 +3,10 @@
 """duckduckgo websearch functions for LLM function calling
 """
 
+from datetime import datetime
 from duckduckgo_search import DDGS
 
-def generate_html_ordered_list(dicts):
+def get_web_results_as_html(dicts):
     """Generate an HTML ordered list from a list of dictionaries containing keyphrases.
 
         This function takes a list of dictionaries where each dictionary is expected to have 
@@ -42,15 +43,30 @@ def generate_html_ordered_list(dicts):
                                        timelimit="d",
                                        max_results=2,
                                        backend="lite")
+            news_results = ddgs.news(keyphrase.lower(),
+                                       region="us-en",
+                                       safesearch="off",
+                                       timelimit="d",
+                                       max_results=2)
 
             # Append the results as links in an HTML ordered list
-            html_output += f"  <li><strong>Results for '{keyphrase_orig}':</strong></li>\n"
+            html_output += f"  <li><strong>Web Search Results for '{keyphrase_orig}':</strong></li>\n"
             for result in search_results:
                 title = result.get('title', 'No Title')
                 href = result.get('href', '#')
 
                 # Format each result as an HTML list item containing a link
                 html_output += f"  <ul><li><a href='{href}'>{title}</a></li></ul>\n"
+            html_output += f"  <li><strong>News Results for '{keyphrase_orig}':</strong></li>\n"
+            for result in news_results:
+                title = result.get('title', 'No Title')
+                url = result.get('url', '#')
+                iso_string = result.get('date', 'No Date')
+                dt_object = datetime.fromisoformat(iso_string)
+                news_date = dt_object.strftime("%m-%d-%Y %H:%M")
+
+                # Format each result as an HTML list item containing a link
+                html_output += f"  <ul><li><a href='{url}'>{title}</a>&nbsp;<i>({news_date})</i></li></ul>\n"
 
         except Exception as e:
             # Handle exceptions by appending an error message
