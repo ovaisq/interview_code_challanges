@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: caching-service
-        image: docker:5000/caching:SEMVER
+        image: jenkins-node-1:5000/caching:SEMVER
         imagePullPolicy: Always
         ports:
         - containerPort: 9090
