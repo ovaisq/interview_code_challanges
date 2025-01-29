@@ -31,16 +31,17 @@
         option for PWA (Progressive Web App) support.
 """
 
+import json
 import os
 import re
 import traceback
 from typing import List
 
 import gradio as gr
-import psycopg2
-from psycopg2.extensions import make_dsn
 
-from config import get_config
+import psycopg2
+from psycopg2 import sql
+
 from langchain.schema import Document
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.document_loaders import WebBaseLoader
@@ -49,6 +50,7 @@ from langchain_ollama import ChatOllama, OllamaEmbeddings
 
 from langchain_postgres import PGVector
 
+from config import get_config
 from websearch import create_dict_list_from_text, get_web_results_as_html
 
 # Configuration
@@ -68,10 +70,84 @@ SERVICE_VERSION = CONFIG.get('service', 'version')
 
 PGVECTOR_CONNECTION = f"postgresql+psycopg://{user}:{password}@{host}:5432/{database}"
 
+PG_CONN_PARAMS = {
+    'dbname': database,
+    'user': user,
+    'password': password,
+    'host': host,  # e.g., 'localhost' or an IP address
+    'port': port   # default is usually 5432
+}
+
 if OLLAMA_HOST:
     os.environ['OLLAMA_HOST'] = OLLAMA_HOST
 else:
     os.environ['OLLAMA_HOST'] = ""
+
+def check_for_url_and_query(url_to_search, keyword_pattern):
+    """Checks if there exists a row in the summarized_results table that matches the specified
+        criteria.
+    """
+
+    try:
+        # Establish a connection to the database using the provided configuration
+        conn = psycopg2.connect(**PG_CONN_PARAMS)
+
+        # Create a cursor object
+        cur = conn.cursor()
+
+        # Execute the query with the provided parameters
+        cur.execute( """
+                SELECT *
+                FROM summarized_results
+                WHERE summarized_results->'urls' ? %s
+                AND lower((summarized_results->>'q_n_i')) LIKE %s;
+                """, (url_to_search, (keyword_pattern.lower() + '%')))
+
+        # Fetch all results
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        query_results = [dict(zip(columns, row)) for row in rows]
+        # Close communication with the database
+        cur.close()
+        conn.close()
+
+        # Return True if any rows were found, otherwise False
+        return query_results
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+
+def insert_json_to_table(json_doc):
+    """Insert JSON into JSONB column"""
+
+    try:
+        # Connect to your PostgreSQL database
+        conn = psycopg2.connect(**PG_CONN_PARAMS)
+
+        # Create a new cursor
+        cur = conn.cursor()
+
+        # SQL statement for inserting the JSON document into the table
+        insert_query = sql.SQL("""
+                                INSERT INTO summarized_results (summarized_results) VALUES (%s);
+                               """)
+
+        # Execute the query with the JSON document
+        cur.execute(insert_query, [json_doc])
+
+        # Commit the transaction
+        conn.commit()
+
+        # Close communication with the database
+        cur.close()
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+    finally:
+        if conn is not None:
+            conn.close()
 
 def extract_section(text):
     """Extract Topic Relevant Keywords section"""
@@ -112,8 +188,7 @@ def embed_and_store_documents(documents: List[Document]):
         vectorstore = PGVector.from_documents(doc_splits, embedding_model,
                                                 connection=PGVECTOR_CONNECTION)
 
-        with psycopg2.connect(make_dsn(host=host, port=port, dbname=database,
-                                        user=user, password=password)) as conn:
+        with psycopg2.connect(**PG_CONN_PARAMS) as conn:
             with conn.cursor() as cur:
                 for doc in doc_splits:
                     cur.execute("SELECT id FROM rag_pgvector WHERE document = %s",
@@ -175,13 +250,34 @@ def process_input(urls_str: str, q_n_i: str) -> str:
     if not urls_list or not q_n_i.strip():
         return "Invalid input"
 
-    orig_results = (query_documents(urls_list, q_n_i) + '\n')
-    keyword_list = extract_section(orig_results)
-    new_results = remove_section(orig_results)
-    # Generate the list of dictionaries from the sample text
-    dicts = create_dict_list_from_text(keyword_list)
-    # Generate and print the HTML ordered list
-    web_results_html = get_web_results_as_html(dicts)
+    json_doc = ''
+
+    lookup_existing_results = check_for_url_and_query(urls_list[0], q_n_i)
+
+    if lookup_existing_results:
+        lookup_existing_results = lookup_existing_results[0]['summarized_results']
+
+    if not lookup_existing_results:
+        orig_results = query_documents(urls_list, q_n_i) + '\n'
+        keyword_list = extract_section(orig_results)
+        new_results = remove_section(orig_results)
+        # Generate the list of dictionaries from the sample text
+        dicts = create_dict_list_from_text(keyword_list)
+        # Generate and print the HTML ordered list
+        web_results_html = get_web_results_as_html(dicts)
+
+        json_doc = {
+                    'urls' : urls_list,
+                    'q_n_i' : q_n_i,
+                    'new_results' : new_results,
+                    'keyword_list' : keyword_list,
+                    'web_results_html' : web_results_html
+                   }
+        insert_json_to_table(json.dumps(json_doc))
+    else:
+        new_results = lookup_existing_results['new_results']
+        keyword_list = lookup_existing_results['keyword_list']
+        web_results_html = lookup_existing_results['web_results_html']
 
     return new_results, keyword_list, web_results_html
 
@@ -218,14 +314,19 @@ with gr.Blocks(css="""
         q_n_a = gr.Textbox(label="Question or Instruction")
 
     with gr.Row():
-        results = gr.Markdown(r"Response to Question or Instruction", elem_id="results-box", label="Results", show_copy_button=True)
-        keywords = gr.Markdown(r"Topic-Relevant Key Phrases",elem_id="keywords-box", label="Keyword List", show_copy_button=True)
+        results = gr.Markdown(r"Response to Question or Instruction",
+                              elem_id="results-box", label="Results", show_copy_button=True)
+        keywords = gr.Markdown(r"Topic-Relevant Key Phrases",
+                               elem_id="keywords-box", label="Keyword List", show_copy_button=True)
 
     with gr.Row():
-        html_list = gr.Markdown(r"Most recent web results", elem_id="web-box", show_copy_button=True)
+        html_list = gr.Markdown(r"Most recent web results",
+                                elem_id="web-box", show_copy_button=True)
 
     submit_button = gr.Button("Submit")
-    submit_button.click(fn=process_input, inputs=[urls, q_n_a], outputs=[results, keywords, html_list])
+    submit_button.click(fn=process_input, inputs=[urls, q_n_a],
+                        outputs=[results, keywords, html_list])
     gr.Markdown(f"<div style='text-align: center; font-size: 1.2em;'><b>LLM</b>: {LLM}<br><b>Embeddings</b>: {EMBED_MODEL}<br>v{SERVICE_VERSION}</div>")
+
 if __name__ == "__main__":
     ui.launch(server_name="0.0.0.0", pwa=True)
