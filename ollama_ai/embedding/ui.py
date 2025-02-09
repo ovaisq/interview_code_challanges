@@ -288,36 +288,36 @@ with gr.Blocks(css="""
         border: 1px solid #ccc;
         padding: 10px;
         border-radius: 5px;
-        background-color: #737373;
+        background-color: #4A60A1;
         min-height: 100px;
     }
     #keywords-box {
         border: 1px solid #ccc;
         padding: 10px;
         border-radius: 5px;
-        background-color: #737373;
+        background-color: #4A60A1;
         min-height: 100px;
     }
     #web-box {
         border: 1px solid #ccc;
         padding: 10px;
         border-radius: 5px;
-        background-color: #000000;
+        background-color: #000011;
         min-height: 100px;
     }
-""", theme=gr.themes.Ocean()) as ui:
-    gr.Markdown("# Chat Ollama Web Assistant")
-    gr.Markdown("Enter URLs and a question or instruction to interact with the content.")
+""", theme=gr.themes.Glass()) as ui:
+    gr.Markdown("# Ollama Web Assistant")
+    gr.Markdown("Enter a URL, ask a question, or provide instructions to interact with the content.")
 
     with gr.Row():
-        urls = gr.Textbox(label="Enter URLs (newline-separated)", lines=5)
-        q_n_a = gr.Textbox(label="Question or Instruction")
+        urls = gr.Textbox(label="Enter a URL")
+        q_n_a = gr.Textbox(label="Ask a question or provide an instruction")
 
     with gr.Row():
-        results = gr.Markdown(r"Response to Question or Instruction",
+        results = gr.Markdown(r"Response to a question or an instruction",
                               elem_id="results-box", label="Results", show_copy_button=True)
         keywords = gr.Markdown(r"Topic-Relevant Key Phrases",
-                               elem_id="keywords-box", label="Keyword List", show_copy_button=True)
+                               elem_id="keywords-box", label="Keyword Phrases", show_copy_button=True)
 
     with gr.Row():
         html_list = gr.Markdown(r"Most recent web results",
