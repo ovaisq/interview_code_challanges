@@ -2,111 +2,38 @@
     "embeddings": {
         "nomic-embed-text": 0.0002
     },
-    "images": {
-        "dall-e-3": {
-            "standard": {
-                "1024x1024": 0.040,
-                "1024x1792": 0.020,
-                "1792x1024": 0.080
-            },
-            "hd": {
-                "1024x1024": 0.080,
-                "1024x1792": 0.120,
-                "1792x1024": 0.120
-            }
-        },
-        "azure_dall-e-3": {
-            "standard": {
-                "1024x1024": 0.040,
-                "1024x1792": 0.020,
-                "1792x1024": 0.080
-            },
-            "hd": {
-                "1024x1024": 0.080,
-                "1024x1792": 0.120,
-                "1792x1024": 0.120
-            }
-        },
-        "dall-e-2": {
-            "standard": {
-                "1024x1024": 0.020,
-                "512x512": 0.018,
-                "256x256": 0.016
-            }
-        },
-        "black-forest-labs/FLUX.1-dev": {
-            "standard": {
-                "1000000": 0.025
-            }
-        },
-        "black-forest-labs/FLUX.1-canny": {
-            "standard": {
-                "1000000": 0.025
-            }
-        },
-        "black-forest-labs/FLUX.1-depth": {
-            "standard": {
-                "1000000": 0.025
-            }
-        },
-        "black-forest-labs/FLUX.1-redux": {
-            "standard": {
-                "1000000": 0.025
-            }
-        },
-        "black-forest-labs/FLUX.1-schnell": {
-            "standard": {
-                "1000000": 0.0027
-            }
-        },
-        "black-forest-labs/FLUX.1-pro": {
-            "standard": {
-                "1000000": 0.04
-            }
-        },
-        "black-forest-labs/FLUX.1.1-pro": {
-            "standard": {
-                "1000000": 0.05
-            }
-        },
-        "stabilityai/stable-diffusion-xl-base-1.0": {
-            "standard": {
-                "512X512": 0.001,
-                "1024x1024": 0.01
-            }
-        },
-        "amazon.titan-image-generator-v1": {
-            "standard": {
-                "512x512": 0.008,
-                "1024x1024": 0.01
-            },
-            "premium": {
-                "512x512": 0.01,
-                "1024x1024": 0.012
-            }
-        }
-    },
-    "audio": {
-        "tts-1" : 0.015,
-        "tts-1-hd": 0.030,
-        "eleven_multilingual_v2": 0.24,
-        "eleven_multilingual_v1": 0.24,
-        "eleven_monolingual_v1": 0.24,
-        "eleven_english_v1": 0.24,
-        "eleven_turbo_v2": 0.24,
-        "eleven_english_sts_v2": 0.24,
-        "eleven_multilingual_sts_v2": 0.24,
-        "best": 0.00010277777,
-        "nano": 0.00003333333
-    },
     "chat": {
 		"phi4": {
             "promptPrice": 0.00025,
             "completionPrice": 0.00125
 		},
-        "deepseek-reasoner":{
+        "deepseek-r1:7b":{
             "promptPrice": 0.00055,
             "completionPrice": 0.00219
+        },
+        "deepseek-r1:32b":{
+            "promptPrice": 0.0055,
+            "completionPrice": 0.0219
+        },
+        "deepseek-r1:70b":{
+            "promptPrice": 0.055,
+            "completionPrice": 0.219
+        },
+        "qwen2.5-coder":{
+            "promptPrice": 0.0001,
+            "completionPrice": 0.0002
+        },
+        "llama3.2":{
+            "promptPrice": 0.00001,
+            "completionPrice": 0.00020
+        },
+        "olmo2":{
+            "promptPrice": 0.00055,
+            "completionPrice": 0.00219
+        },
+        "dolphin3":{
+            "promptPrice": 0.0012,
+            "completionPrice": 0.0030
         }
-    }
+	}
 }
