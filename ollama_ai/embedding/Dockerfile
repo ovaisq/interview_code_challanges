@@ -14,6 +14,7 @@ COPY websearch.py /app
 COPY ui.py /app
 COPY setup.config /app
 COPY requirements.txt /app
+COPY pricing.json /app/
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r /app/requirements.txt
 

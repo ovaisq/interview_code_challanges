@@ -13,6 +13,7 @@ build_docker() {
   sed -i "s|OLLAMA_HOST_URL|$OLLAMA_HOST_URL|" setup.config
   sed -i "s|OLLAMA_LLM|$OLLAMA_LLM|" setup.config
   sed -i "s|SEMVER|$SEMVER|" setup.config
+  sed -i "s|OTLP_URL|$OTLP_URL|" setup.config
   ./build_docker.py
 }
 

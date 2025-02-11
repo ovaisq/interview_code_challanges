@@ -32,6 +32,7 @@
 """
 
 import json
+import time
 import os
 import re
 import traceback
@@ -41,6 +42,8 @@ import gradio as gr
 
 import psycopg2
 from psycopg2 import sql
+
+import openlit
 
 from langchain.schema import Document
 from langchain.text_splitter import CharacterTextSplitter
@@ -82,6 +85,10 @@ if OLLAMA_HOST:
     os.environ['OLLAMA_HOST'] = OLLAMA_HOST
 else:
     os.environ['OLLAMA_HOST'] = ""
+
+openlit.init(otlp_endpoint=CONFIG.get('otlp','OTLP_ENDPOINT_URL'),
+             collect_gpu_stats=CONFIG.get('otlp','COLLECT_GPU_STATS'),
+             pricing_json=CONFIG.get('otlp','PRICING_JSON'))
 
 def check_for_url_and_query(url_to_search, keyword_pattern):
     """Checks if there exists a row in the summarized_results table that matches the specified
@@ -267,6 +274,7 @@ def process_input(urls_str: str, q_n_i: str) -> str:
         web_results_html = get_web_results_as_html(dicts)
 
         json_doc = {
+                    'timestamp' : int(time.time()),
                     'urls' : urls_list,
                     'q_n_i' : q_n_i,
                     'new_results' : new_results,
