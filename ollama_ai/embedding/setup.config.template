@@ -15,4 +15,4 @@ version=SEMVER
 [otlp]
 OTLP_ENDPOINT_URL=OTLP_URL
 COLLECT_GPU_STATS=True
-PRICIING_JSON=pricing.json
+PRICING_JSON=pricing.json
