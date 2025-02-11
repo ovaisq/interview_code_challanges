@@ -11,3 +11,4 @@ pgvector
 bs4
 tiktoken
 duckduckgo_search
+openlit
