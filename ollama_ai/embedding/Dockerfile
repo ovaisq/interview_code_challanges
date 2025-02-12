@@ -25,6 +25,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 # Service config
 EXPOSE 7860
 ENV GRADIO_SERVER_NAME="0.0.0.0"
+ENV OTEL_RESOURCE_ATTRIBUTES="OTEL_ATTRS"
 
 # Run
 CMD ["/app/ui.py"]
