@@ -88,7 +88,9 @@ else:
 
 openlit.init(otlp_endpoint=CONFIG.get('otlp','OTLP_ENDPOINT_URL'),
              collect_gpu_stats=CONFIG.get('otlp','COLLECT_GPU_STATS'),
-             pricing_json=CONFIG.get('otlp','PRICING_JSON'))
+             pricing_json=CONFIG.get('otlp','PRICING_JSON'),
+             environment='production',
+             application_name='ollama-web-assistant')
 
 def check_for_url_and_query(url_to_search, keyword_pattern):
     """Checks if there exists a row in the summarized_results table that matches the specified

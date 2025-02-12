@@ -36,7 +36,6 @@ apply_kubernetes() {
 
 # Read config
 source config_vals.txt
-sed -i "s|OTEL_ATTRS|$OTEL_ATTRS|" Dockerfile
 
 # Call the functions with the version as an argument
 build_docker $SEMVER
