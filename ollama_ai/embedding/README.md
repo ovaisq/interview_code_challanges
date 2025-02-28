@@ -5,6 +5,43 @@ Chat Ollama is a web-based application that uses natural language processing (NL
 
 ![UI](summarizer.png)
 
+```mermaid
+graph TD;
+    A[User Input] --> B{URLs & Questions};
+    B -->|Accept URLs| C(Text Processing);
+    B -->|Enter Queries| D(NLP Engine);
+    C --> E(Vector Embedding);
+    E --> F(PostgreSQL Database);
+    D --> G(Vector Querying);
+    F --> H(Processed Results);
+    G --> I(Response Generation);
+    I --> J(Keyword Appending);
+    J --> K(Displayed Output);
+    L[DuckDuckGo Search] --> M(HTML Ordered List);
+
+    subgraph Data Flow
+        B;
+        C;
+        D;
+        E;
+        F;
+        G;
+        H;
+        I;
+        J;
+        K;
+        L;
+        M;
+    end
+
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333,stroke-width:2px
+    style C fill:#bfb,stroke:#333,stroke-width:2px
+    style D fill:#ffb,stroke:#333,stroke-width:2px
+    style F fill:#fff,stroke:#999,stroke-width:1px
+    style K fill:#fff,stroke:#666,stroke-width:1px
+```
+
 Table of Contents
 -----------------
 
