@@ -294,6 +294,13 @@ def process_input(urls_str: str, q_n_i: str) -> str:
 
 # Define Gradio UI
 with gr.Blocks(css="""
+    #trends-box {
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #4A60A1;
+        min-height: 100px;
+    }
     #results-box {
         border: 1px solid #ccc;
         padding: 10px;
@@ -318,6 +325,9 @@ with gr.Blocks(css="""
 """, theme=gr.themes.Glass()) as ui:
     gr.Markdown("# Ollama Web Assistant")
     gr.Markdown("Enter a URL, ask a question, or provide instructions to interact with the content.")
+
+    with gr.Row():
+        trends = gr.Textbox(label="Current Trends",interactive=False)
 
     with gr.Row():
         urls = gr.Textbox(label="Enter a URL")
