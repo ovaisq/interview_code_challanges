@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Chat Ollama Web Assistant
 
-	This application leverages Gradio to create an interactive user interface
-	for querying a set of web documents and generating responses based on their
-	content. It integrates with OpenAI's language models, PostgreSQL for data
-	storage and retrieval, and vector embeddings to enhance the search
-	capabilities. The app also utilizes custom modules like `duckduckgo_search` to
-	perform DuckDuckGo searches and generate HTML lists.
+    This application leverages Gradio to create an interactive user interface
+    for querying a set of web documents and generating responses based on their
+    content. It integrates with OpenAI's language models, PostgreSQL for data
+    storage and retrieval, and vector embeddings to enhance the search
+    capabilities. The app also utilizes custom modules like `duckduckgo_search` to
+    perform DuckDuckGo searches and generate HTML lists.
 
-	Key Features:
+    Key Features:
         - Accepts multiple URLs as input.
         - Processes the text from these URLs using NLP techniques to embed them
             into vectors.
@@ -20,13 +20,13 @@
         - Uses DuckDuckGo to search for keyphrases extracted from processed text
             and generate HTML ordered lists.
 
-	User Interface:
+    User Interface:
         - Textbox for entering multiple newline-separated URLs.
         - Textbox for inputting questions or instructions.
         - Buttons and outputs for displaying the processed results, keyword list,
             and HTML content.
 
-	Execution:
+    Execution:
         Run this script as the main program, launching it on a server with the
         option for PWA (Progressive Web App) support.
 """
@@ -91,6 +91,57 @@ openlit.init(otlp_endpoint=CONFIG.get('otlp','OTLP_ENDPOINT_URL'),
              pricing_json=CONFIG.get('otlp','PRICING_JSON'),
              environment='production',
              application_name='ollama-web-assistant')
+
+def get_keyphrase_trends():
+    """Get list of keyphrases"""
+
+    try:
+        # Establish a connection to the database using the provided configuration
+        conn = psycopg2.connect(**PG_CONN_PARAMS)
+
+        # Create a cursor object
+        cur = conn.cursor()
+
+        # Execute the query with the provided parameters
+        sql_q = """
+        WITH ExtractedLines AS (
+            SELECT
+                jsonb_array_elements_text(summarized_results->'urls') AS urls,
+                summarized_results->>'new_results' AS new_results, -- Include new_results
+                regexp_replace(line_text, '^\\d+\\.\\s*', '', 'g') AS line_text, -- Remove leading numbers
+                ordinality
+            FROM
+                summarized_results,
+                LATERAL unnest(string_to_array(summarized_results->>'keyword_list', E'\\n')) WITH ORDINALITY AS t(line_text, ordinality)
+        ),
+        FilteredLines AS (
+            SELECT urls, new_results, line_text, ordinality
+            FROM ExtractedLines
+            WHERE ordinality > (
+                SELECT MAX(ordinality) - 3
+                FROM ExtractedLines e2
+                WHERE ExtractedLines.urls = e2.urls
+            )
+        )
+        SELECT line_text AS keyword_list
+        FROM FilteredLines
+        WHERE line_text != ''
+        ORDER BY ordinality;
+        """
+        cur.execute(sql_q)
+
+        # Fetch all results
+        rows = cur.fetchall()
+        blob_of_text = "\n".join([row[0] for row in rows])
+        # Close communication with the database
+        cur.close()
+        conn.close()
+
+        # Return True if any rows were found, otherwise False
+        return blob_of_text
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
 
 def check_for_url_and_query(url_to_search, keyword_pattern):
     """Checks if there exists a row in the summarized_results table that matches the specified
@@ -252,6 +303,31 @@ def query_documents(url_list: List[str], query: str) -> str:
         print(f"Error querying documents: {e}\n{traceback.format_exc()}")
         return "An error occurred while processing the query."
 
+def get_trend_summary():
+    try:
+        # Define prompt template
+        prompt_template = """
+        Based on the following context, respond to the query:
+        Context: {context}
+        Query: {query}
+        """
+        prompt = ChatPromptTemplate.from_template(prompt_template)
+
+        my_context = get_keyphrase_trends()
+
+        # Initialize the model
+        model = ChatOllama(model=LLM, temperature=0.7)
+
+        # Create the input for the pipeline
+        input_data = {"context": my_context, "query": "Based on this come up with trending topics, respond as a table of 3 columns. Nothing before or after or outside of the table."}
+
+        # Run the pipeline
+        prompt_result = prompt.invoke(input_data)  # Process input through the prompt
+        model_result = model.invoke(prompt_result)  # Process the prompt result through the model
+        return model_result.content if hasattr(model_result, "content") else "No content available."
+    except Exception as e:
+        print(f"Error querying documents: {e}\n{traceback.format_exc()}")
+        return "An error occurred while processing the query."
 def process_input(urls_str: str, q_n_i: str) -> str:
     """Processes the input URLs and query to generate a response."""
 
@@ -324,10 +400,11 @@ with gr.Blocks(css="""
     }
 """, theme=gr.themes.Glass()) as ui:
     gr.Markdown("# Ollama Web Assistant")
-    gr.Markdown("Enter a URL, ask a question, or provide instructions to interact with the content.")
+    gr.Markdown("### Trending Topics")
 
     with gr.Row():
-        trends = gr.Textbox(label="Current Trends",interactive=False)
+        trends = gr.Markdown(label="Current Trends", show_copy_button=True, elem_id='trends-box', every=15)
+    ui.load(get_trend_summary, inputs=None, outputs=trends)
 
     with gr.Row():
         urls = gr.Textbox(label="Enter a URL")
