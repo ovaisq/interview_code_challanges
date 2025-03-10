@@ -200,9 +200,11 @@ def get_initial_times():
     
     return pacific_dt_str, ist_dt_str, cst_dt_str
 
-with gr.Blocks() as app:
+with gr.Blocks(theme=gr.themes.Soft()) as app:
     init_pacific, init_ist, init_cst = get_initial_times()
-    
+
+    gr.Markdown("# Time Zone Converter")
+    gr.Markdown("### (24hr Clock)")
     with gr.Row():
         pacific_input = gr.Textbox(label="Pacific Time (PST/PDT)", value=init_pacific)
         ist_input = gr.Textbox(label="India Time (IST)", value=init_ist)
@@ -242,4 +244,4 @@ with gr.Blocks() as app:
         outputs=[pacific_input, ist_input, cst_input]
     )
     
-app.launch()
+app.launch(server_name="0.0.0.0", pwa=True)
