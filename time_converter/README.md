@@ -13,23 +13,12 @@ This Python application provides functions to convert times between various time
    ```
 
 ## Usage
-### Functions
-
-- **update_from_cst(cst_str)**: Converts a CST time string to PST and IST.
-
-Example:
-```python
-result = update_from_cst("14:30")
-print(result)  # Output might be ['07:00', '21:30', '14:30']
-```
-
-- **get_initial_times()**: Returns current times in PST, IST, and CST.
-
 ### Running the Application
-Execute your script or module as needed based on your environment setup.
-
+```bash
+./time_zone_converter.py
+```
 ## Authors
-- Your Name
+- Ollama/QWEN2.5-CODER:32B
 
 ## License
-MIT License
+None - Do whatever you want with this (pd)
