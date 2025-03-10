@@ -3,6 +3,9 @@
 ## Description
 This Python application provides functions to convert times between various time zones, specifically Pacific Standard Time (PST), Indian Standard Time (IST), and Central Standard Time (CST).
 
+You can edit the fields and enter a time in your desired time zone, hit tab or ENTER; the application will automatically convert it to other specified time zones.
+
+
 ![UI](time_zone_converter.png)
 
 ## Installation
