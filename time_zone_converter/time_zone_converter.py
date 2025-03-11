@@ -205,10 +205,29 @@ with gr.Blocks(theme=gr.themes.Soft()) as app:
 
     gr.Markdown("# Time Zone Converter")
     gr.Markdown("### (24hr Clock)")
+    gr.Markdown("**Current Time**")
+    
     with gr.Row():
-        pacific_input = gr.Textbox(label="Pacific Time (PST/PDT)", value=init_pacific)
-        ist_input = gr.Textbox(label="India Time (IST)", value=init_ist)
-        cst_input = gr.Textbox(label="Central Time (CST/CDT)", value=init_cst)
+        cpacific_input = gr.Textbox(label="Pacific Time (PST/PDT)", value=init_pacific)
+        cist_input = gr.Textbox(label="India Time (IST)", value=init_ist)
+        ccst_input = gr.Textbox(label="Central Time (CST/CDT)", value=init_cst)
+        # Add a manual refresh button
+    with gr.Row():
+        refresh_button = gr.Button("Refresh Current Time", elem_id="refresh-button")
+
+    def update_times(*args):
+        new_pacific, new_ist, new_cst = get_initial_times()
+        
+        return new_pacific, new_ist, new_cst
+
+    # Linking the button click to trigger update function
+    refresh_button.click(fn=update_times, outputs=[cpacific_input, cist_input, ccst_input])
+    
+    gr.Markdown("**Time conversions**")
+    with gr.Row():
+        pacific_input = gr.Textbox(label="Pacific Time (PST/PDT)", value="00:00")
+        ist_input = gr.Textbox(label="India Time (IST)", value="00:00")
+        cst_input = gr.Textbox(label="Central Time (CST/CDT)", value="00:00")
 
     # Add both blur and submit events for each input
     pacific_input.blur(
@@ -243,5 +262,12 @@ with gr.Blocks(theme=gr.themes.Soft()) as app:
         inputs=cst_input,
         outputs=[pacific_input, ist_input, cst_input]
     )
+        # Define the function to update inputs when the refresh button is clicked
+    def update_times(*args):
+        new_pacific, new_ist, new_cst = refresh_times()
+        
+        pacific_input.value = new_pacific
+        ist_input.value = new_ist
+        cst_input.value = new_cst
     
 app.launch(server_name="0.0.0.0", pwa=True)
