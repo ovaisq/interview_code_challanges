@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: timezone-converter
+ namespace: ollamagpt
+ labels:
+   app: timezone-converter
+spec:
+ replicas: 1
+ selector:
+   matchLabels:
+     app: timezone-converter
+ template:
+   metadata:
+     labels:
+       app: timezone-converter
+   spec:
+     containers:
+     - name: timezone-converter
+       image: docker:5000/timezone-converter:latest # Updated image
+       ports:
+       - containerPort: 7860
+       imagePullPolicy: Always
