@@ -34,6 +34,7 @@
 import json
 import time
 import os
+import random
 import re
 import traceback
 from typing import List
@@ -91,6 +92,23 @@ openlit.init(otlp_endpoint=CONFIG.get('otlp','OTLP_ENDPOINT_URL'),
              pricing_json=CONFIG.get('otlp','PRICING_JSON'),
              environment='production',
              application_name='ollama-web-assistant')
+
+def set_random_user_agent():
+    """Picks a random user-agent from a given list and sets it as an environment variable USER_AGENT.
+
+        Returns:
+            str: The randomly selected user-agent string, or None if the list is empty.
+    """
+
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15",
+        "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:54.0) Gecko/20100101 Firefox/54.0",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
+    ]
+
+    random_user_agent = random.choice(user_agents)
+    os.environ['USER_AGENT'] = random_user_agent
 
 def get_keyphrase_trends():
     """Get list of keyphrases"""
@@ -304,6 +322,7 @@ def query_documents(url_list: List[str], query: str) -> str:
         return "An error occurred while processing the query."
 
 def get_trend_summary():
+
     try:
         # Define prompt template
         prompt_template = """
@@ -328,8 +347,11 @@ def get_trend_summary():
     except Exception as e:
         print(f"Error querying documents: {e}\n{traceback.format_exc()}")
         return "An error occurred while processing the query."
+
 def process_input(urls_str: str, q_n_i: str) -> str:
     """Processes the input URLs and query to generate a response."""
+
+    set_random_user_agent()
 
     urls_list = urls_str.strip().split("\n")
     if not urls_list or not q_n_i.strip():
