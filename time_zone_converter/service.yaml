@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: timezone-converter-service
+  namespace: ollamagpt
+  labels:
+    app: timezone-converter
+spec:
+  type: ClusterIP
+  ports:
+  - port: 7860
+    targetPort: 7860
+    protocol: TCP
+  selector:
+    app: timezone-converter
