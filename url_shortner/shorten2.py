@@ -117,5 +117,49 @@ def use_shortened_url(token):
 
     return jsonify({'message': 'URL is now in progress'}), 200
 
+@app.route('/refresh/<token>', methods=['POST'])
+def refresh_token(token):
+    try:
+        data_part, signature_part = token.split('.', 1)
+    except ValueError:
+        return jsonify({'error': 'Invalid token format'}), 400
+
+    # Validate signature
+    expected_signature = hmac.new(SECRET_KEY, data_part.encode('utf-8'), hashlib.sha256).digest()[:2]
+    actual_signature = base64.urlsafe_b64decode(signature_part + '==')[:2]
+    if not hmac.compare_digest(expected_signature, actual_signature):
+        return jsonify({'error': 'Invalid signature'}), 401
+
+    conn = get_db_connection()
+    row = conn.execute('SELECT * FROM shortened_urls WHERE token = ?', (token,)).fetchone()
+    if not row:
+        conn.close()
+        return jsonify({'error': 'Token not found'}), 404
+
+    current_time = time.time()
+    if current_time <= row['expiration']:
+        conn.close()
+        return jsonify({'error': 'Token is not expired'}), 400
+
+    original_uuid = row['original_uuid']
+
+    # Generate a new token with retry loop to avoid collisions
+    while True:
+        new_short_token = generate_short_token()
+        new_signed_token = generate_token_with_signature(new_short_token)
+        try:
+            conn.execute(
+                'INSERT INTO shortened_urls (original_uuid, token, expiration, status) VALUES (?, ?, ?, ?)',
+                (original_uuid, new_signed_token, int(current_time) + 300, 'never_used')
+            )
+            conn.commit()
+            break
+        except sqlite3.IntegrityError:
+            conn.rollback()
+            # Token already exists; retry with a new one
+
+    conn.close()
+    return jsonify({'new_shortened_url': f'https://foo.url/{new_signed_token}'})
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False, host='0.0.0.0', port=5001)
