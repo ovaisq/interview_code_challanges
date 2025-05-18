@@ -88,11 +88,8 @@ curl -X POST http://localhost:3000/shorten \
 ```bash
 curl 'http://127.0.0.1:3000/shortened/234567.AB1'
 ```
-**States**
-```bash
-curl http://localhost:3000/shortened/234567.AB1
-```
 
+**States**
 ```bash
 {"message":"URL is now in progress","original_url":"https://example.com/1234567890abcdef1234567890abcdef"}
 ```
