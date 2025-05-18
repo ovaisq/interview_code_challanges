@@ -70,6 +70,15 @@ curl 'http://127.0.0.1:5000/shortened/B6WxSf.GB0'
 }
 ```
 
+**Refresh the token**
+```bash
+curl -X POST http://localhost:5001/refresh/Gj0MhD.LtY
+```
+
+```bash
+{"new_shortened_url":"https://foo.url/YvNSw9.7ig"}
+```
+
 ### NodeJS
 
 **Shorten a Url**
