@@ -15,7 +15,7 @@ app = Flask(__name__)
 SECRET_KEY = b''  # Use environment variables in production
 
 def get_db_connection():
-	"""DB Connection"""
+    """DB Connection"""
 
     conn = sqlite3.connect('file::memory:?cache=shared', uri=True)
     conn.row_factory = sqlite3.Row
