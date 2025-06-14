@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-""" Module: json_key_replacer
+""" Module: replace_json_key
 	This module provides functionality to replace a specific key in a JSON
 	document with a new value. It recursively searches through the JSON
 	structure, both dictionaries and lists, to locate all occurrences of the
