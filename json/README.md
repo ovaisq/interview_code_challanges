@@ -28,9 +28,10 @@ interactively choose which occurrence to modify.
        2. b>a
        3. b>c>[0]>a
        4. b>c>[1]>d>a
-       Enter the number of the key to replace (or 0 to cancel): 3
-       
-       Modified JSON (after user selection):{"a": 1, "b": {"a": 2, "c": [{"a": 99}, {"d": {"a": 4}}]}}
+       Enter the number of the key to replace (or 0 to cancel): 2
+
+       Modified JSON (after user selection):
+       {"a": 1, "b": {"a": {"a": 99, "b": {"z": 200}}, "c": [{"a": 3}, {"d": {"a": 4}}]}}
 
 2. **Interactive Prompt**
 

@@ -101,6 +101,6 @@ test_json = '{"a":1,"b":{"a":2,"c":[{"a":3},{"d":{"a":4}}]}}'
 print("Original JSON:")
 print(test_json)
 
-modified_json = replace_json_key(test_json, "a", 99)
+modified_json = replace_json_key(test_json, "a", json.loads('{"a":99, "b":{"z":200}}'))
 print("\nModified JSON (after user selection):")
 print(modified_json)
