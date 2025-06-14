@@ -18,8 +18,7 @@ interactively choose which occurrence to modify.
 1. **Run Directly**
 
    Open your terminal and run:
-
-       $ chmod +x replace_json_key_values.py 
+ 
        $ ./replace_json_key_values.py
        Original JSON:
        {"a":1,"b":{"a":2,"c":[{"a":3},{"d":{"a":4}}]}}
