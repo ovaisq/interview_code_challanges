@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """ Module: replace_json_key
+
 	This module provides functionality to replace a specific key in a JSON
 	document with a new value. It recursively searches through the JSON
 	structure, both dictionaries and lists, to locate all occurrences of the
@@ -10,6 +11,7 @@
 """
 
 import json
+import os
 
 def replace_json_key(json_doc, target_key, new_value):
     """Replace instances of 'target_key' in JSON after user selection.
@@ -72,7 +74,6 @@ def replace_json_key(json_doc, target_key, new_value):
             selection = input("Enter the number of the key to replace (or 0 to cancel): ")
             if selection == '0':
                 return json_doc  # Return original if user cancels
-
             selection_int = int(selection)
             if 1 <= selection_int <= len(matched_keys):
                 break
@@ -96,11 +97,49 @@ def replace_json_key(json_doc, target_key, new_value):
 
     return json.dumps(data)
 
-# test the function
-test_json = '{"a":1,"b":{"a":2,"c":[{"a":3},{"d":{"a":4}}]}}'
-print("Original JSON:")
-print(test_json)
+def main():
 
-modified_json = replace_json_key(test_json, "a", json.loads('{"a":99, "b":{"z":200}}'))
-print("\nModified JSON (after user selection):")
-print(modified_json)
+    import sys
+
+    if len(sys.argv) != 3:
+        print("Usage: ./replace_json_key_values.py <filename> <key_to_replace>")
+        sys.exit(1)
+
+    filename = sys.argv[1]
+    key_to_replace = sys.argv[2]
+
+    # check if file exists
+    if not os.path.exists(filename):
+        print(f"File '{filename}' does not exist.")
+        sys.exit(1)
+
+    try:
+        with open(filename, 'r') as f:
+            json_doc = f.read()
+            data = json.loads(json_doc)
+    except (IOError, json.JSONDecodeError) as e:
+        print(f"Failed to read or parse JSON from file '{filename}': {e}")
+        sys.exit(1)
+
+    new_value = input("Enter the new value for key '{}': ".format(key_to_replace))
+    try:
+        # try parsing it into valid JSON
+        new_value_json = json.loads(new_value)
+    except json.JSONDecodeError as e:
+        print(f"Provided new value is not valid JSON: {e}")
+        sys.exit(1)
+
+    modified_json = replace_json_key(json_doc, key_to_replace, new_value_json)
+
+    # save results to a new file with prefix "new_"
+    output_filename = "new_" + filename
+    try:
+        with open(output_filename, 'w') as f:
+            f.write(modified_json)
+        print(f"Modified JSON saved to '{output_filename}'")
+    except IOError as e:
+        print(f"Failed to write modified JSON to file '{output_filename}': {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

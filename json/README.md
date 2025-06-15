@@ -1,50 +1,75 @@
-
 # JSON Key Replacer
 
-A Python tool to update the value of a specified key within a JSON document.
-This script recursively searches through nested dictionaries and lists, displays
-all occurrences of the target key with their access paths, and allows you to
-interactively choose which occurrence to modify.
-
-## Features
-
-- **Recursive Traversal:** Searches through both dictionaries and lists in your JSON.
-- **Interactive Selection:** Lists each found instance of the target key along with its path.
-- **Easy Integration:** Importable as a module for use in other projects.
-- **Robust Error Handling:** Validates the input JSON and handles invalid entries gracefully.
+This Python script allows you to replace specific keys in a JSON document with new values. It recursively searches through the JSON structure (both dictionaries and lists) to locate all occurrences of the target key, presents them to the user, and allows for an interactive selection of which occurrence to update.
 
 ## Usage
 
-1. **Run Directly**
+To use this script, run it from the command line with the following arguments:
 
-   Open your terminal and run:
- 
-       $ ./replace_json_key_values.py
-       Original JSON:
-       {"a":1,"b":{"a":2,"c":[{"a":3},{"d":{"a":4}}]}}
-       Found the following instances of key 'a':
-       1. a
-       2. b>a
-       3. b>c>[0]>a
-       4. b>c>[1]>d>a
-       Enter the number of the key to replace (or 0 to cancel): 2
+```
+./replace_json_key_values.py <filename> <key_to_replace>
+```
 
-       Modified JSON (after user selection):
-       {"a": 1, "b": {"a": {"a": 99, "b": {"z": 200}}, "c": [{"a": 3}, {"d": {"a": 4}}]}}
+Where:
+- `<filename>` is the path to your JSON file.
+- `<key_to_replace>` is the key whose value you want to replace in the JSON document.
 
-2. **Interactive Prompt**
+### Example
 
-   The script will display all occurrences of the target key (in this example, "a") along with a numbered list.
-   Enter the number corresponding to the occurrence you wish to update or enter `0` to cancel.
+```sh
+./replace_json_key_values.py data.json name
+```
 
-3. **Output**
+After running this command, you will be prompted to enter the new value for the specified key. The script will then check if the provided value is valid JSON and perform the replacement interactively, showing you all instances of the key in the document.
 
-   The script prints both the original and modified JSON documents.
+### Requirements
 
-## Installation
+- Python 3.x
 
-No external libraries are required beyond Python’s standard library. Simply ensure that you have Python 3 installed,
-then run the script as shown above.
+## How It Works
 
-## Author
+1. **File Check**: The script first checks if the provided filename exists.
+2. **JSON Validation**: It reads the file and validates that its content is a valid JSON.
+3. **Key Search**: Recursively searches through the JSON structure for all occurrences of the specified key.
+4. **Interactive Replacement**: Prompts you to enter a new value and allows you to select which occurrence of the key you want to replace.
+5. **Output**: Saves the modified JSON to a new file with a "new_" prefix added to the original filename.
+
+## Example
+
+Given a `data.json` file:
+
+```json
+{
+    "name": "John Doe",
+    "details": {
+        "name": "Jane Smith"
+    },
+    "list": [
+        {"name": "Alice"},
+        {"name": "Bob"}
+    ]
+}
+```
+
+Running the script with:
+
+```
+./replace_json_key_values.py data.json name
+```
+
+You will be prompted to enter a new value for `name`. After selecting which occurrence of `name` you want to change, it saves the result in `new_data.json`.
+
+```
+./replace_json_key_values.py data.json name
+Enter the new value for key 'name': "Jake"
+Found the following instances of key 'name':
+1. name
+2. details>name
+3. list>[0]>name
+4. list>[1]>name
+Enter the number of the key to replace (or 0 to cancel): 4
+Modified JSON saved to 'new_data.json'
+```
+## License
+
 ©2025, Ovais Quraishi

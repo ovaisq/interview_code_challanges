@@ -1,0 +1,10 @@
+{
+    "name": "John Doe",
+    "details": {
+        "name": "Jane Smith"
+    },
+    "list": [
+        {"name": "Alice"},
+        {"name": "Bob"}
+    ]
+}
