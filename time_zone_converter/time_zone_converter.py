@@ -13,182 +13,93 @@ import gradio as gr
 from datetime import datetime
 import pytz
 
+# Time zone constants for reuse
+TIMEZONES = {
+    'pst': pytz.timezone('America/Los_Angeles'),
+    'ist': pytz.timezone('Asia/Kolkata'),
+    'cst': pytz.timezone('US/Central'),
+    'est': pytz.timezone('America/New_York')
+}
+
+def _convert_time(time_str, from_tz_key, to_tz_keys):
+    """Converts a given time string from one timezone to multiple target timezones.
+    
+    Args:
+        time_str (str): Time string in "HH:MM" format
+        from_tz_key (str): Key for source timezone ('pst', 'ist', 'cst', 'est')
+        to_tz_keys (list): List of keys for target timezones
+        
+    Returns:
+        list: List of time strings in target timezones or ["Invalid", ...] on error
+    """
+    try:
+        from_tz = TIMEZONES[from_tz_key]
+        parsed_time = datetime.strptime(time_str.strip(), "%H:%M")
+        naive_dt = datetime.combine(datetime.today(), parsed_time.time())
+        local_dt = from_tz.localize(naive_dt)
+        utc_dt = local_dt.astimezone(pytz.utc)
+        
+        result = []
+        for tz_key in to_tz_keys:
+            tz = TIMEZONES[tz_key]
+            result.append(utc_dt.astimezone(tz).strftime("%H:%M"))
+        
+        # Add the original time in its timezone
+        result.insert(0, from_tz.normalize(local_dt).strftime("%H:%M"))
+        return result
+    except (ValueError, pytz.exceptions.AmbiguousTimeError, 
+            pytz.exceptions.NonExistentTimeError):
+        return ["Invalid"] * (len(to_tz_keys) + 1)
+
 def update_from_pacific(pst_time_str):
     """Converts a given Pacific Standard Time string to Indian Standard Time,
        Central Standard Time, and Eastern Standard Time
-        This function takes a PST time in "HH:MM" format as input, then converts
-        it to equivalent times in IST, CST, and EST
-        Parameters:
-        pst_time_str (str): A string representing the time in Pacific Standard
-                            Time in "HH:MM" format
-        Returns:
-        list: A list containing four strings. The first is Pacific Standard
-              Time, the second is Indian Standard Time, the third is
-              Central Standard Time, and the fourth is Eastern Standard Time.
-              If conversion fails due to parsing errors or invalid times, 
-              returns ["Invalid", "Invalid", "Invalid", "Invalid"]
-        Raises:
-        ValueError: If `pst_time_str` is not in the expected format.
     """
-    try:
-        pacific_tz = pytz.timezone('America/Los_Angeles')
-        parsed_time = datetime.strptime(pst_time_str.strip(), "%H:%M")
-        naive_dt = datetime.combine(datetime.today(), parsed_time.time())
-        local_dt = pacific_tz.localize(naive_dt)
-        utc_dt = local_dt.astimezone(pytz.utc)
-        
-        ist_tz = pytz.timezone('Asia/Kolkata')
-        cst_tz = pytz.timezone('US/Central')
-        est_tz = pytz.timezone('America/New_York')
-        
-        ist_time_str = utc_dt.astimezone(ist_tz).strftime("%H:%M")
-        cst_time_str = utc_dt.astimezone(cst_tz).strftime("%H:%M")
-        est_time_str = utc_dt.astimezone(est_tz).strftime("%H:%M")
-        
-        return [pacific_tz.normalize(local_dt).strftime("%H:%M"), 
-                ist_time_str, cst_time_str, est_time_str]
-    except (ValueError, pytz.exceptions.AmbiguousTimeError, 
-            pytz.exceptions.NonExistentTimeError):
-        return ["Invalid", "Invalid", "Invalid", "Invalid"]
+    return _convert_time(pst_time_str, 'pst', ['ist', 'cst', 'est'])
 
 def update_from_ist(ist_time_str):
     """Converts a given Indian Standard Time string to Pacific Standard Time,
        Central Standard Time, and Eastern Standard Time.
-        This function takes an IST time in "HH:MM" format as input, then
-        converts it to equivalent times in PST, CST, and EST.
-        Parameters:
-        ist_time_str (str): A string representing the time in Indian Standard 
-                            Time in "HH:MM" format.
-        Returns:
-        list: A list containing four strings. The first is Pacific Standard Time,
-              the second is Indian Standard Time as provided or calculated, 
-              the third is Central Standard Time, and the fourth is Eastern Standard Time.
-              If conversion fails due to parsing errors or invalid times, 
-              returns ["Invalid", "Invalid", "Invalid", "Invalid"].
-        Raises:
-        ValueError: If `ist_time_str` is not in the expected format.
     """
-    try:
-        ist_tz = pytz.timezone('Asia/Kolkata')
-        parsed_time = datetime.strptime(ist_time_str.strip(), "%H:%M")
-        naive_dt = datetime.combine(datetime.today(), parsed_time.time())
-        local_dt = ist_tz.localize(naive_dt)
-        utc_dt = local_dt.astimezone(pytz.utc)
-        
-        pacific_tz = pytz.timezone('America/Los_Angeles')
-        cst_tz = pytz.timezone('US/Central')
-        est_tz = pytz.timezone('America/New_York')
-        
-        pacific_time_str = utc_dt.astimezone(pacific_tz).strftime("%H:%M")
-        cst_time_str = utc_dt.astimezone(cst_tz).strftime("%H:%M")
-        est_time_str = utc_dt.astimezone(est_tz).strftime("%H:%M")
-        
-        return [pacific_time_str, 
-                ist_tz.normalize(local_dt).strftime("%H:%M"), 
-                cst_time_str, est_time_str]
-    except (ValueError, pytz.exceptions.AmbiguousTimeError, 
-            pytz.exceptions.NonExistentTimeError):
-        return ["Invalid", "Invalid", "Invalid", "Invalid"]
+    return _convert_time(ist_time_str, 'ist', ['pst', 'cst', 'est'])
 
 def update_from_cst(cst_time_str):
     """Converts a given Central Standard Time string to Pacific Standard Time,
        Indian Standard Time, and Eastern Standard Time.
-        This function takes a CST time in "HH:MM" format as input, then 
-        converts it to equivalent times in PST, IST, and EST.
-        Parameters:
-        cst_time_str (str): A string representing the time in Central Standard 
-                            Time in "HH:MM" format.
-        Returns:
-        list: A list containing four strings. The first is Pacific Standard Time,
-              the second is Indian Standard Time, the third is Central Standard Time,
-              and the fourth is Eastern Standard Time.
-              If conversion fails due to parsing errors or invalid times, 
-              returns ["Invalid", "Invalid", "Invalid", "Invalid"].
-        Raises:
-        ValueError: If `cst_time_str` is not in the expected format.
     """
-    try:
-        cst_tz = pytz.timezone('US/Central')
-        parsed_time = datetime.strptime(cst_time_str.strip(), "%H:%M")
-        naive_dt = datetime.combine(datetime.today(), parsed_time.time())
-        local_dt = cst_tz.localize(naive_dt)
-        utc_dt = local_dt.astimezone(pytz.utc)
-        
-        pacific_tz = pytz.timezone('America/Los_Angeles')
-        ist_tz = pytz.timezone('Asia/Kolkata')
-        est_tz = pytz.timezone('America/New_York')
-        
-        pacific_time_str = utc_dt.astimezone(pacific_tz).strftime("%H:%M")
-        ist_time_str = utc_dt.astimezone(ist_tz).strftime("%H:%M")
-        est_time_str = utc_dt.astimezone(est_tz).strftime("%H:%M")
-        
-        return [pacific_time_str, ist_time_str, 
-                cst_tz.normalize(local_dt).strftime("%H:%M"), 
-                est_time_str]
-    except (ValueError, pytz.exceptions.AmbiguousTimeError, 
-            pytz.exceptions.NonExistentTimeError):
-        return ["Invalid", "Invalid", "Invalid", "Invalid"]
+    return _convert_time(cst_time_str, 'cst', ['pst', 'ist', 'est'])
 
 def update_from_est(est_time_str):
     """Converts a given Eastern Standard Time string to Pacific Standard Time,
        Indian Standard Time, and Central Standard Time.
-        This function takes an EST time in "HH:MM" format as input, then 
-        converts it to equivalent times in PST, IST, and CST.
-        Parameters:
-        est_time_str (str): A string representing the time in Eastern Standard 
-                            Time in "HH:MM" format.
-        Returns:
-        list: A list containing four strings. The first is Pacific Standard Time,
-              the second is Indian Standard Time, the third is Central Standard Time,
-              and the fourth is Eastern Standard Time.
-              If conversion fails due to parsing errors or invalid times, 
-              returns ["Invalid", "Invalid", "Invalid", "Invalid"].
-        Raises:
-        ValueError: If `est_time_str` is not in the expected format.
     """
-    try:
-        est_tz = pytz.timezone('America/New_York')
-        parsed_time = datetime.strptime(est_time_str.strip(), "%H:%M")
-        naive_dt = datetime.combine(datetime.today(), parsed_time.time())
-        local_dt = est_tz.localize(naive_dt)
-        utc_dt = local_dt.astimezone(pytz.utc)
-        
-        pacific_tz = pytz.timezone('America/Los_Angeles')
-        ist_tz = pytz.timezone('Asia/Kolkata')
-        cst_tz = pytz.timezone('US/Central')
-        
-        pacific_time_str = utc_dt.astimezone(pacific_tz).strftime("%H:%M")
-        ist_time_str = utc_dt.astimezone(ist_tz).strftime("%H:%M")
-        cst_time_str = utc_dt.astimezone(cst_tz).strftime("%H:%M")
-        
-        return [pacific_time_str, ist_time_str, cst_time_str,
-                est_tz.normalize(local_dt).strftime("%H:%M")]
-    except (ValueError, pytz.exceptions.AmbiguousTimeError, 
-            pytz.exceptions.NonExistentTimeError):
-        return ["Invalid", "Invalid", "Invalid", "Invalid"]
+    return _convert_time(est_time_str, 'est', ['pst', 'ist', 'cst'])
 
 def get_initial_times():
-    """Retrieves the current times in Pacific Standard Time, Indian Standard Time,
-       Central Standard Time, and Eastern Standard Time.
-        This function calculates and returns the current local time for PST, IST,
-        CST, and EST using UTC as a reference point.
-        Returns:
-        tuple: A tuple containing four strings. Each string represents the current 
-               time in "HH:MM" format for Pacific Standard Time, Indian Standard Time,
-               Central Standard Time, and Eastern Standard Time respectively.
-    """
+    """Retrieves the current times in all supported time zones."""
     now_utc = datetime.now(pytz.utc)
-    pst_tz = pytz.timezone('America/Los_Angeles')
-    ist_tz = pytz.timezone('Asia/Kolkata')
-    cst_tz = pytz.timezone('US/Central')
-    est_tz = pytz.timezone('America/New_York')
+    return tuple(
+        now_utc.astimezone(tz).strftime("%H:%M") 
+        for tz in TIMEZONES.values()
+    )
+
+def update_all_timezones(time_value):
+    """Updates all timezones based on a single slider value.
     
-    pacific_dt_str = now_utc.astimezone(pst_tz).strftime("%H:%M")
-    ist_dt_str = now_utc.astimezone(ist_tz).strftime("%H:%M")
-    cst_dt_str = now_utc.astimezone(cst_tz).strftime("%H:%M")
-    est_dt_str = now_utc.astimezone(est_tz).strftime("%H:%M")
+    Args:
+        time_value (float): Time value in 24-hour format (0.0 to 24.0)
+        
+    Returns:
+        tuple: Updated times for all timezones
+    """
+    # Convert slider value to HH:MM format
+    hours = int(time_value)
+    minutes = int((time_value - hours) * 60)
+    time_str = f"{hours:02d}:{minutes:02d}"
     
-    return pacific_dt_str, ist_dt_str, cst_dt_str, est_dt_str
+    # Update all timezones based on Pacific time
+    result = update_from_pacific(time_str)
+    return result
 
 # Gradio Interface
 with gr.Blocks(title="Timezone Converter", theme=gr.themes.Soft(), 
@@ -209,7 +120,7 @@ with gr.Blocks(title="Timezone Converter", theme=gr.themes.Soft(),
     with gr.Row():
         refresh_button = gr.Button("Refresh Current Time")
     
-    def update_times(*args):
+    def update_times():
         new_pacific, new_ist, new_cst, new_est = get_initial_times()
         return new_pacific, new_ist, new_cst, new_est
     
@@ -219,54 +130,27 @@ with gr.Blocks(title="Timezone Converter", theme=gr.themes.Soft(),
     
     gr.Markdown("**Time conversions**")
     
+    # Slider for 24-hour time scale
+    time_slider = gr.Slider(
+        minimum=0.0,
+        maximum=24.0,
+        value=0.0,
+        step=0.1,
+        label="Select Time (24-hour format)",
+        interactive=True
+    )
+    
+    # Textboxes for displaying times in each timezone
     with gr.Row():
         pacific_input = gr.Textbox(label="Pacific Time (PST/PDT)", value="00:00")
         ist_input = gr.Textbox(label="India Time (IST)", value="00:00")
         cst_input = gr.Textbox(label="Central Time (CST/CDT)", value="00:00")
         est_input = gr.Textbox(label="Eastern Time (EST/EDT)", value="00:00")
     
-    # Add both blur and submit events for each input
-    pacific_input.blur(
-        fn=update_from_pacific,
-        inputs=pacific_input,
-        outputs=[pacific_input, ist_input, cst_input, est_input]
-    )
-    pacific_input.submit(
-        fn=update_from_pacific,
-        inputs=pacific_input,
-        outputs=[pacific_input, ist_input, cst_input, est_input]
-    )
-    
-    ist_input.blur(
-        fn=update_from_ist,
-        inputs=ist_input,
-        outputs=[pacific_input, ist_input, cst_input, est_input]
-    )
-    ist_input.submit(
-        fn=update_from_ist,
-        inputs=ist_input,
-        outputs=[pacific_input, ist_input, cst_input, est_input]
-    )
-    
-    cst_input.blur(
-        fn=update_from_cst,
-        inputs=cst_input,
-        outputs=[pacific_input, ist_input, cst_input, est_input]
-    )
-    cst_input.submit(
-        fn=update_from_cst,
-        inputs=cst_input,
-        outputs=[pacific_input, ist_input, cst_input, est_input]
-    )
-    
-    est_input.blur(
-        fn=update_from_est,
-        inputs=est_input,
-        outputs=[pacific_input, ist_input, cst_input, est_input]
-    )
-    est_input.submit(
-        fn=update_from_est,
-        inputs=est_input,
+    # Update only the bottom row when slider changes (responsive)
+    time_slider.input(
+        fn=update_all_timezones,
+        inputs=time_slider,
         outputs=[pacific_input, ist_input, cst_input, est_input]
     )
 
