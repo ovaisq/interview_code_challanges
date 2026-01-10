@@ -102,7 +102,7 @@ def update_all_timezones(time_value):
     return result
 
 # Gradio Interface
-with gr.Blocks(title="Timezone Converter", theme=gr.themes.Soft(), 
+with gr.Blocks(title="Timezone Converter",
                css='footer {display: none !important;}') as app:
     
     init_pacific, init_ist, init_cst, init_est = get_initial_times()
@@ -154,4 +154,6 @@ with gr.Blocks(title="Timezone Converter", theme=gr.themes.Soft(),
         outputs=[pacific_input, ist_input, cst_input, est_input]
     )
 
-app.launch(server_name='0.0.0.0', server_port=7860, pwa=True)
+# Move launch call to main execution block
+if __name__ == "__main__":
+    app.launch(theme=gr.themes.Soft(), server_name='0.0.0.0', server_port=7860, pwa=True)
