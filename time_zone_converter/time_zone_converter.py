@@ -1,171 +1,80 @@
 #!/usr/bin/env python3
 
-"""Time Zone Converter Application
-        This application provides functions to convert times between various time zones:
-        - Pacific Standard Time (America/Los_Angeles)
-        - Indian Standard Time (Asia/Kolkata)
-        - Central Standard Time (US/Central)
-        - Eastern Standard Time (America/New_York)
-        Users can input a time in any of these formats, and the system will calculate
-        the equivalent times for the other three time zones.
-"""
 import gradio as gr
-from datetime import datetime
-import pytz
+from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
-# Time zone constants for reuse
+# Configuration: Display Name -> IANA Timezone ID
 TIMEZONES = {
-    'pst': pytz.timezone('America/Los_Angeles'),
-    'ist': pytz.timezone('Asia/Kolkata'),
-    'cst': pytz.timezone('US/Central'),
-    'est': pytz.timezone('America/New_York')
+    "Pacific": "America/Los_Angeles",
+    "India": "Asia/Kolkata",
+    "Central": "US/Central",
+    "Eastern": "America/New_York"
 }
 
-def _convert_time(time_str, from_tz_key, to_tz_keys):
-    """Converts a given time string from one timezone to multiple target timezones.
+def format_dt(dt: datetime, tz_id: str) -> str:
+    """Converts a datetime to target timezone and formats as HH:MM."""
+    return dt.astimezone(ZoneInfo(tz_id)).strftime("%H:%M")
+
+def get_all_times(base_dt: datetime = None):
+    """Returns a list of formatted times for all configured timezones."""
+    # Default to current UTC time if no base provided
+    dt = base_dt or datetime.now(ZoneInfo("UTC"))
+    return [format_dt(dt, tz) for tz in TIMEZONES.values()]
+
+def handle_slider_change(slider_val):
+    """Converts slider minutes (0-1439) to formatted times across all zones."""
+    hours = int(slider_val // 60)
+    minutes = int(slider_val % 60)
     
-    Args:
-        time_str (str): Time string in "HH:MM" format
-        from_tz_key (str): Key for source timezone ('pst', 'ist', 'cst', 'est')
-        to_tz_keys (list): List of keys for target timezones
-        
-    Returns:
-        list: List of time strings in target timezones or ["Invalid", ...] on error
-    """
-    try:
-        from_tz = TIMEZONES[from_tz_key]
-        parsed_time = datetime.strptime(time_str.strip(), "%H:%M")
-        naive_dt = datetime.combine(datetime.today(), parsed_time.time())
-        local_dt = from_tz.localize(naive_dt)
-        utc_dt = local_dt.astimezone(pytz.utc)
-        
-        result = []
-        for tz_key in to_tz_keys:
-            tz = TIMEZONES[tz_key]
-            result.append(utc_dt.astimezone(tz).strftime("%H:%M"))
-        
-        # Add the original time in its timezone
-        result.insert(0, from_tz.normalize(local_dt).strftime("%H:%M"))
-        return result
-    except (ValueError, pytz.exceptions.AmbiguousTimeError, 
-            pytz.exceptions.NonExistentTimeError):
-        return ["Invalid"] * (len(to_tz_keys) + 1)
-
-def update_from_pacific(pst_time_str):
-    """Converts a given Pacific Standard Time string to Indian Standard Time,
-       Central Standard Time, and Eastern Standard Time
-    """
-    return _convert_time(pst_time_str, 'pst', ['ist', 'cst', 'est'])
-
-def update_from_ist(ist_time_str):
-    """Converts a given Indian Standard Time string to Pacific Standard Time,
-       Central Standard Time, and Eastern Standard Time.
-    """
-    return _convert_time(ist_time_str, 'ist', ['pst', 'cst', 'est'])
-
-def update_from_cst(cst_time_str):
-    """Converts a given Central Standard Time string to Pacific Standard Time,
-       Indian Standard Time, and Eastern Standard Time.
-    """
-    return _convert_time(cst_time_str, 'cst', ['pst', 'ist', 'est'])
-
-def update_from_est(est_time_str):
-    """Converts a given Eastern Standard Time string to Pacific Standard Time,
-       Indian Standard Time, and Central Standard Time.
-    """
-    return _convert_time(est_time_str, 'est', ['pst', 'ist', 'cst'])
-
-def get_initial_times():
-    """Retrieves the current times in all supported time zones."""
-    now_utc = datetime.now(pytz.utc)
-    return tuple(
-        now_utc.astimezone(tz).strftime("%H:%M") 
-        for tz in TIMEZONES.values()
-    )
-
-def get_local_timezone():
-    """Retrieves the local timezone name with DST information."""
-    local_tz = pytz.timezone('America/Los_Angeles')  # Default to PST
-    now = datetime.now(pytz.utc)
-    local_dt = now.astimezone(local_tz)
-    return local_dt.tzinfo.tzname(local_dt)
-
-def update_all_timezones(time_value):
-    """Updates all timezones based on a single slider value.
+    # Use Pacific as the anchor for the slider (as per original logic)
+    anchor_tz = ZoneInfo(TIMEZONES["Pacific"])
+    # Create a localized datetime for today at the slider's time
+    naive_dt = datetime.combine(datetime.today(), time(hours, minutes))
+    localized_dt = naive_dt.replace(tzinfo=anchor_tz)
     
-    Args:
-        time_value (float): Time value in 24-hour format (0.0 to 24.0)
-        
-    Returns:
-        tuple: Updated times for all timezones
-    """
-    # Convert slider value to HH:MM format
-    hours = int(time_value)
-    minutes = int((time_value - hours) * 60)
-    time_str = f"{hours:02d}:{minutes:02d}"
-    
-    # Update all timezones based on Pacific time
-    result = update_from_pacific(time_str)
-    return result
+    return get_all_times(localized_dt)
+
+def get_local_tz_name():
+    """Returns the system's local timezone name."""
+    return datetime.now().astimezone().tzname()
 
 # Gradio Interface
-with gr.Blocks(title="Timezone Converter",
-               css='footer {display: none !important;}') as app:
-    
-    init_pacific, init_ist, init_cst, init_est = get_initial_times()
-    local_tz_name = get_local_timezone()
-    
+with gr.Blocks(title="Timezone Converter", css='footer {display: none !important;}') as app:
     gr.Markdown("# Time Zone Converter")
-    gr.Markdown("### (24hr Clock)")
-    gr.Markdown(
-        f'<div style="color: #00D125; font-weight: bold; font-size: 18px;">Your Local Timezone: {local_tz_name}</div>'
-    )
-    #gr.Markdown(f"**Your Local Timezone: {local_tz_name}**")
-    gr.Markdown("**Current Time**")
     
-    with gr.Row():
-        cpacific_input = gr.Textbox(label="Pacific Time (PST/PDT)", value=init_pacific)
-        cist_input = gr.Textbox(label="India Time (IST)", value=init_ist)
-        ccst_input = gr.Textbox(label="Central Time (CST/CDT)", value=init_cst)
-        cest_input = gr.Textbox(label="Eastern Time (EST/EDT)", value=init_est)
+    with gr.Group():
+        gr.Markdown(f"**Local System Timezone:** `{get_local_tz_name()}`")
+        
+        with gr.Row():
+            # Current Time Row
+            curr_inputs = [
+                gr.Textbox(label=f"{name} (Current)", value=val) 
+                for name, val in zip(TIMEZONES.keys(), get_all_times())
+            ]
+        
+        refresh_btn = gr.Button("Sync to Current Time", variant="secondary")
+
+    gr.Markdown("---")
+    gr.Markdown("### Interactive Conversion (24hr)")
     
-    with gr.Row():
-        refresh_button = gr.Button("Refresh Current Time")
-    
-    def update_times():
-        new_pacific, new_ist, new_cst, new_est = get_initial_times()
-        return new_pacific, new_ist, new_cst, new_est
-    
-    # Linking the button click to trigger update function
-    refresh_button.click(fn=update_times, 
-                         outputs=[cpacific_input, cist_input, ccst_input, cest_input])
-    
-    gr.Markdown("**Time conversions**")
-    
-    # Slider for 24-hour time scale
+    # Slider: 0 to 1439 (minutes in a day)
     time_slider = gr.Slider(
-        minimum=0.0,
-        maximum=24.0,
-        value=0.0,
-        step=0.1,
-        label="Select Time (24-hour format)",
-        interactive=True
+        minimum=0, maximum=1439, value=0, step=1,
+        label="Slide to adjust time (Anchor: Pacific Time)"
     )
     
-    # Textboxes for displaying times in each timezone
     with gr.Row():
-        pacific_input = gr.Textbox(label="Pacific Time (PST/PDT)", value="00:00")
-        ist_input = gr.Textbox(label="India Time (IST)", value="00:00")
-        cst_input = gr.Textbox(label="Central Time (CST/CDT)", value="00:00")
-        est_input = gr.Textbox(label="Eastern Time (EST/EDT)", value="00:00")
+        conv_inputs = [gr.Textbox(label=name, value="00:00") for name in TIMEZONES.keys()]
+
+    # Event Handlers
+    refresh_btn.click(fn=lambda: get_all_times(), outputs=curr_inputs)
     
-    # Update only the bottom row when slider changes (responsive)
     time_slider.input(
-        fn=update_all_timezones,
+        fn=handle_slider_change,
         inputs=time_slider,
-        outputs=[pacific_input, ist_input, cst_input, est_input]
+        outputs=conv_inputs
     )
 
-# Move launch call to main execution block
 if __name__ == "__main__":
-    app.launch(theme=gr.themes.Soft(), server_name='0.0.0.0', server_port=7860, pwa=True)
+    app.launch(theme=gr.themes.Soft(),server_name='0.0.0.0', server_port=7860)
