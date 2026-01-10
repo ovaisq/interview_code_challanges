@@ -83,6 +83,13 @@ def get_initial_times():
         for tz in TIMEZONES.values()
     )
 
+def get_local_timezone():
+    """Retrieves the local timezone name with DST information."""
+    local_tz = pytz.timezone('America/Los_Angeles')  # Default to PST
+    now = datetime.now(pytz.utc)
+    local_dt = now.astimezone(local_tz)
+    return local_dt.tzinfo.tzname(local_dt)
+
 def update_all_timezones(time_value):
     """Updates all timezones based on a single slider value.
     
@@ -106,9 +113,14 @@ with gr.Blocks(title="Timezone Converter",
                css='footer {display: none !important;}') as app:
     
     init_pacific, init_ist, init_cst, init_est = get_initial_times()
+    local_tz_name = get_local_timezone()
     
     gr.Markdown("# Time Zone Converter")
     gr.Markdown("### (24hr Clock)")
+    gr.Markdown(
+        f'<div style="color: #00D125; font-weight: bold; font-size: 18px;">Your Local Timezone: {local_tz_name}</div>'
+    )
+    #gr.Markdown(f"**Your Local Timezone: {local_tz_name}**")
     gr.Markdown("**Current Time**")
     
     with gr.Row():
