@@ -136,6 +136,20 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
+        input[type="text"]#timeInput:hover {
+            border-color: #667eea;
+        }
+
+        input[type="text"]#timeInput:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input[type="text"]#timeInput::placeholder {
+            color: #a0aec0;
+        }
+
         .divider {
             border: none;
             border-top: 2px solid #e2e8f0;
@@ -266,6 +280,10 @@
             <div class="slider-wrapper">
                 <input type="range" id="timeSlider" min="0" max="1439" value="0" step="1">
                 <div class="slider-value" id="sliderValue">00:00</div>
+            </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <label style="font-size: 0.9rem; color: #4a5568; font-weight: 500; display: block; margin-bottom: 8px;">Or enter time directly (24hr format HH:MM):</label>
+                <input type="text" id="timeInput" value="00:00" placeholder="00:00" pattern="[0-2][0-9]:[0-5][0-9]" maxlength="5" style="padding: 10px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem; color: #2d3748; background: white; cursor: text; transition: all 0.3s ease; font-family: 'Courier New', monospace; font-weight: 600; width: 120px; text-align: center;">
             </div>
         </div>
 
@@ -408,25 +426,73 @@
             updateCurrentTimes();
         }
 
-        // Initialize slider and anchor selector
+        // Initialize slider, time input, and anchor selector
         const slider = document.getElementById('timeSlider');
         const sliderValueDisplay = document.getElementById('sliderValue');
         const anchorSelector = document.getElementById('anchorTimezone');
+        const timeInput = document.getElementById('timeInput');
 
         function updateSliderDisplay() {
             const sliderVal = parseInt(slider.value);
             const hours = Math.floor(sliderVal / 60);
             const minutes = sliderVal % 60;
             
-            sliderValueDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            sliderValueDisplay.textContent = timeStr;
+            
+            // Sync time input with slider
+            timeInput.value = timeStr;
             
             const anchorTz = anchorSelector.value;
             const times = handleSliderChange(sliderVal, anchorTz);
             updateConversionTimes(times);
         }
 
+        function updateFromTimeInput() {
+            let timeValue = timeInput.value.trim();
+            
+            // Validate format HH:MM
+            const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
+            const match = timeValue.match(timeRegex);
+            
+            if (!match) {
+                // Invalid format, revert to current slider value
+                const sliderVal = parseInt(slider.value);
+                const hours = Math.floor(sliderVal / 60);
+                const minutes = sliderVal % 60;
+                timeInput.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                return;
+            }
+            
+            let hours = parseInt(match[1]);
+            let minutes = parseInt(match[2]);
+            
+            // Ensure valid range
+            if (hours > 23) hours = 23;
+            if (minutes > 59) minutes = 59;
+            
+            const sliderVal = hours * 60 + minutes;
+            
+            // Format properly
+            const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            timeInput.value = formattedTime;
+            
+            // Update slider position
+            slider.value = sliderVal;
+            
+            // Update display
+            updateSliderDisplay();
+        }
+
         slider.addEventListener('input', updateSliderDisplay);
         anchorSelector.addEventListener('change', updateSliderDisplay);
+        timeInput.addEventListener('blur', updateFromTimeInput);
+        timeInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                updateFromTimeInput();
+                timeInput.blur();
+            }
+        });
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
