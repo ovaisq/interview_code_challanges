@@ -126,6 +126,16 @@
             transform: translateY(0);
         }
 
+        select:hover {
+            border-color: #667eea;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
         .divider {
             border: none;
             border-top: 2px solid #e2e8f0;
@@ -241,7 +251,18 @@
         <h2>Interactive Conversion (24hr)</h2>
         
         <div class="slider-container">
-            <label class="slider-label">Slide to adjust time (Anchor: Pacific Time)</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                <label class="slider-label" style="margin: 0;">Slide to adjust time</label>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-size: 0.9rem; color: #4a5568; font-weight: 500;">Anchor:</label>
+                    <select id="anchorTimezone" style="padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; color: #2d3748; background: white; cursor: pointer; transition: all 0.3s ease;">
+                        <option value="Pacific">Pacific</option>
+                        <option value="India">India</option>
+                        <option value="Central">Central</option>
+                        <option value="Eastern">Eastern</option>
+                    </select>
+                </div>
+            </div>
             <div class="slider-wrapper">
                 <input type="range" id="timeSlider" min="0" max="1439" value="0" step="1">
                 <div class="slider-value" id="sliderValue">00:00</div>
@@ -294,41 +315,59 @@
             return times;
         }
 
-        // Handle slider change
-        function handleSliderChange(sliderValue) {
+        // Handle slider change with dynamic anchor timezone
+        function handleSliderChange(sliderValue, anchorTimezone) {
             const hours = Math.floor(sliderValue / 60);
             const minutes = sliderValue % 60;
             
-            // Create a date for today at the slider's time in Pacific timezone
+            // Get the IANA timezone for the anchor
+            const anchorTzId = TIMEZONES[anchorTimezone];
+            
+            // Create a date string in ISO format
             const now = new Date();
             
-            // Get current time in Pacific
-            const pacificDate = new Date(now.toLocaleString('en-US', { 
-                timeZone: TIMEZONES.Pacific 
-            }));
+            // We need to create a date that when formatted in the anchor timezone shows our desired time
+            // Strategy: Start with a UTC date, then adjust it so that when viewed in anchor timezone, it shows the slider time
             
-            // Set the hours and minutes
-            pacificDate.setHours(hours, minutes, 0, 0);
+            // First, create a date in the anchor timezone with our desired time
+            const yearStr = now.getFullYear();
+            const monthStr = String(now.getMonth() + 1).padStart(2, '0');
+            const dayStr = String(now.getDate()).padStart(2, '0');
+            const hourStr = String(hours).padStart(2, '0');
+            const minStr = String(minutes).padStart(2, '0');
             
-            // Convert back to UTC for consistent conversion
-            const utcTime = new Date(pacificDate.toLocaleString('en-US', { 
-                timeZone: 'UTC' 
-            }));
+            // Create a string that represents the time we want in the anchor timezone
+            const targetTimeStr = `${yearStr}-${monthStr}-${dayStr}T${hourStr}:${minStr}:00`;
             
-            // Calculate offset
-            const offset = pacificDate.getTime() - new Date(pacificDate.toLocaleString('en-US', { 
-                timeZone: TIMEZONES.Pacific 
-            })).getTime();
+            // Parse as local (browser) time first
+            const tempDate = new Date(targetTimeStr);
             
-            // Create adjusted date in Pacific time
-            const localDate = new Date();
-            localDate.setHours(hours, minutes, 0, 0);
+            // Get what this date looks like in the anchor timezone
+            const anchorTimeStr = tempDate.toLocaleString('en-US', {
+                timeZone: anchorTzId,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
             
-            // We need to create a proper date that represents the slider time in Pacific
-            // This is a bit tricky, so we'll use a different approach
-            const baseStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+            // Parse the anchor time to see what it actually shows
+            const [anchorDatePart, anchorTimePart] = anchorTimeStr.split(', ');
+            const [anchorMonth, anchorDay, anchorYear] = anchorDatePart.split('/');
+            const [anchorHour, anchorMin, anchorSec] = anchorTimePart.split(':');
             
-            return getAllTimes(new Date(baseStr));
+            // Calculate the difference between what we want and what we got
+            const actualMinutes = parseInt(anchorHour) * 60 + parseInt(anchorMin);
+            const desiredMinutes = hours * 60 + minutes;
+            const diffMinutes = desiredMinutes - actualMinutes;
+            
+            // Adjust the date by the difference
+            const adjustedDate = new Date(tempDate.getTime() + diffMinutes * 60 * 1000);
+            
+            return getAllTimes(adjustedDate);
         }
 
         // Update current time displays
@@ -369,26 +408,31 @@
             updateCurrentTimes();
         }
 
-        // Initialize slider
+        // Initialize slider and anchor selector
         const slider = document.getElementById('timeSlider');
         const sliderValueDisplay = document.getElementById('sliderValue');
+        const anchorSelector = document.getElementById('anchorTimezone');
 
-        slider.addEventListener('input', function() {
-            const sliderVal = parseInt(this.value);
+        function updateSliderDisplay() {
+            const sliderVal = parseInt(slider.value);
             const hours = Math.floor(sliderVal / 60);
             const minutes = sliderVal % 60;
             
             sliderValueDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
             
-            const times = handleSliderChange(sliderVal);
+            const anchorTz = anchorSelector.value;
+            const times = handleSliderChange(sliderVal, anchorTz);
             updateConversionTimes(times);
-        });
+        }
+
+        slider.addEventListener('input', updateSliderDisplay);
+        anchorSelector.addEventListener('change', updateSliderDisplay);
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('localTzName').textContent = getLocalTimezoneName();
             updateCurrentTimes();
-            updateConversionTimes(handleSliderChange(0));
+            updateConversionTimes(handleSliderChange(0, 'Pacific'));
             
             // Update current times every minute
             setInterval(updateCurrentTimes, 60000);
