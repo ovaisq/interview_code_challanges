@@ -1,6 +1,7 @@
 ### Howto
 
 ```bash
+> npm install
 > npm install -D @playwright/test
 > npx playwright install chromium
 > npm run serve
