@@ -1,0 +1,29 @@
+{
+  "name": "timezone-converter-tests",
+  "version": "1.0.0",
+  "description": "Playwright tests for timezone converter - optimized for Twinny users",
+  "main": "twinny-quick-test.js",
+  "scripts": {
+    "test": "node twinny-quick-test.js",
+    "test:interactive": "node twinny-interactive-test.js",
+    "test:full": "node timezone-converter-tests.js",
+    "serve": "python3 -m http.server 8000",
+    "serve:win": "python -m http.server 8000"
+  },
+  "keywords": [
+    "playwright",
+    "testing",
+    "timezone",
+    "twinny"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^25.0.6",
+    "playwright": "^1.40.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
