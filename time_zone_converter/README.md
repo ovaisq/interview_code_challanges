@@ -5,7 +5,10 @@ This Python application provides functions to convert times between various time
 
 You can edit the fields and enter a time in your desired time zone, hit tab or ENTER; the application will automatically convert it to other specified time zones.
 
+#### Standalone HTML/JS/CSS single page app
+![UI](tzc_html.png)
 
+#### Python App
 ![UI](time_zone_converter.png)
 
 ## Installation
