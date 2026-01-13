@@ -11,7 +11,7 @@ A sleek, glassmorphic productivity timer built with HTML, CSS, and JavaScript. I
 ## Demo
 Check out the screen recording of the timer in action:
 
-[![Watch the video](https://raw.githubusercontent.com/ovaisq/interview_code_challanges/main/pomodoro_timer/pomodoro.mov)]
+![Watch the video](https://raw.githubusercontent.com/ovaisq/interview_code_challanges/main/pomodoro_timer/pomodoro.mov)
 
 ## How to Use
 1. Download `pomodoro.html`.
